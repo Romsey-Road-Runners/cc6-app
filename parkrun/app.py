@@ -54,13 +54,33 @@ def get_clubs():
 
 @app.route("/register", methods=["POST"])
 def register():
-    name = request.form.get("name", "").strip()
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    email = request.form.get("email", "").strip()
+    gender = request.form.get("gender", "")
+    dob = request.form.get("dob", "")
     barcode = request.form.get("barcode", "").strip().upper()
     club = request.form.get("club", "")
 
     # Validation
-    if not name:
-        flash("Name is required")
+    if not first_name:
+        flash("First name is required")
+        return redirect(url_for("index"))
+
+    if not last_name:
+        flash("Last name is required")
+        return redirect(url_for("index"))
+
+    if not email:
+        flash("Email is required")
+        return redirect(url_for("index"))
+
+    if not gender:
+        flash("Gender is required")
+        return redirect(url_for("index"))
+
+    if not dob:
+        flash("Date of birth is required")
         return redirect(url_for("index"))
 
     if not validate_barcode(barcode):
@@ -81,7 +101,11 @@ def register():
     try:
         db.collection("participants").add(
             {
-                "name": name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "gender": gender,
+                "date_of_birth": dob,
                 "barcode": barcode,
                 "club": club,
                 "registered_at": firestore.SERVER_TIMESTAMP,

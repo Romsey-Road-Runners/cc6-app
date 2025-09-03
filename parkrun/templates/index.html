@@ -37,8 +37,32 @@
     
     <form method="POST" action="/register">
         <div class="form-group">
-            <label for="name">Full Name:</label>
-            <input type="text" id="name" name="name" required>
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="gender">Gender:</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" required>
         </div>
         
         <div class="form-group">

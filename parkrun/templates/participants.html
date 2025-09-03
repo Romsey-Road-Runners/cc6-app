@@ -23,7 +23,11 @@
     <table>
         <thead>
             <tr>
-                <th>Name</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Gender</th>
+                <th>DOB</th>
                 <th>Barcode</th>
                 <th>Club</th>
                 <th>Registered</th>
@@ -32,14 +36,18 @@
         <tbody>
             {% for participant in participants %}
             <tr>
-                <td>{{ participant.get('name') }}</td>
+                <td>{{ participant.get('first_name') }}</td>
+                <td>{{ participant.get('last_name') }}</td>
+                <td>{{ participant.get('email') }}</td>
+                <td>{{ participant.get('gender') }}</td>
+                <td>{{ participant.get('date_of_birth') }}</td>
                 <td>{{ participant.get('barcode') }}</td>
                 <td>{{ participant.get('club') }}</td>
                 <td>{{ participant.get('registered_at').strftime('%Y-%m-%d %H:%M') if participant.get('registered_at') else 'N/A' }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="4">No participants registered yet.</td>
+                <td colspan="8">No participants registered yet.</td>
             </tr>
             {% endfor %}
         </tbody>

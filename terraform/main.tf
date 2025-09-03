@@ -16,11 +16,11 @@ resource "random_password" "flask_secret_key" {
 # Create secret in Secret Manager
 resource "google_secret_manager_secret" "flask_secret_key" {
   secret_id = "flask-secret-key"
-  
+
   replication {
     auto {}
   }
-  
+
   depends_on = [google_project_service.secretmanager]
 }
 
@@ -67,13 +67,13 @@ resource "null_resource" "docker_build" {
       gcloud builds submit --project ${var.project_id} --tag gcr.io/${var.project_id}/parkrun-app
     EOT
   }
-  
+
   depends_on = [google_project_service.cloudbuild]
-  
+
   triggers = {
     dockerfile_hash = filemd5("../parkrun/Dockerfile")
-    app_hash       = filemd5("../parkrun/app.py")
-    pipfile_hash   = filemd5("../parkrun/Pipfile")
+    app_hash        = filemd5("../parkrun/app.py")
+    pipfile_hash    = filemd5("../parkrun/Pipfile")
   }
 }
 
@@ -106,21 +106,21 @@ resource "google_cloud_run_service" "parkrun_app" {
     metadata {
       annotations = {
         "run.googleapis.com/execution-environment" = "gen2"
-        "build-trigger" = null_resource.docker_build.id
+        "build-trigger"                            = null_resource.docker_build.id
       }
     }
-    
+
     spec {
       service_account_name = google_service_account.cloudrun_sa.email
-      
+
       containers {
         image = "gcr.io/${var.project_id}/parkrun-app:latest"
-        
+
         env {
           name  = "GOOGLE_CLOUD_PROJECT"
           value = var.project_id
         }
-        
+
         env {
           name = "FLASK_SECRET_KEY"
           value_from {
@@ -130,7 +130,7 @@ resource "google_cloud_run_service" "parkrun_app" {
             }
           }
         }
-        
+
         resources {
           limits = {
             cpu    = "1000m"
