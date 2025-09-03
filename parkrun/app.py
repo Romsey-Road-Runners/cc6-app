@@ -1,13 +1,48 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+    session,
+)
 from google.cloud import firestore
+from authlib.integrations.flask_client import OAuth
 import re
 import os
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
 
 # Initialize Firestore
 db = firestore.Client()
+
+# Initialize OAuth
+oauth = OAuth(app)
+google = oauth.register(
+    name="google",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    access_token_url="https://oauth2.googleapis.com/token",
+    userinfo_endpoint="https://openidconnect.googleapis.com/v1/userinfo",
+    jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
+    client_kwargs={"scope": "openid email profile"},
+)
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 
 # Predefined running clubs
 RUNNING_CLUBS = [
@@ -118,7 +153,32 @@ def register():
     return redirect(url_for("index"))
 
 
+@app.route("/login")
+def login():
+    redirect_uri = url_for("auth_callback", _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route("/auth/callback")
+def auth_callback():
+    token = google.authorize_access_token()
+    user = token.get("userinfo")
+    if user and user.get("email") == "weston.sam@gmail.com":
+        session["user"] = user
+        return redirect(url_for("participants"))
+    else:
+        flash("Access denied. Unauthorized email address.")
+        return redirect(url_for("index"))
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("index"))
+
+
 @app.route("/participants")
+@login_required
 def participants():
     """View all registered participants"""
     participants = (
@@ -126,7 +186,9 @@ def participants():
         .order_by("registered_at", direction=firestore.Query.DESCENDING)
         .get()
     )
-    return render_template("participants.html", participants=participants)
+    return render_template(
+        "participants.html", participants=participants, user=session.get("user")
+    )
 
 
 if __name__ == "__main__":

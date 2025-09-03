@@ -59,6 +59,27 @@ resource "google_project_service" "cloudbuild" {
   service = "cloudbuild.googleapis.com"
 }
 
+# Placeholder secrets (to be populated manually)
+resource "google_secret_manager_secret" "oauth_client_id" {
+  secret_id = "oauth-client-id"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret" "oauth_client_secret" {
+  secret_id = "oauth-client-secret"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
 # Build and push Docker image using gcloud
 resource "null_resource" "docker_build" {
   provisioner "local-exec" {
@@ -86,6 +107,18 @@ resource "google_service_account" "cloudrun_sa" {
 # Grant access to secrets
 resource "google_secret_manager_secret_iam_member" "secret_access" {
   secret_id = google_secret_manager_secret.flask_secret_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloudrun_sa.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "oauth_client_id_access" {
+  secret_id = google_secret_manager_secret.oauth_client_id.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.cloudrun_sa.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "oauth_client_secret_access" {
+  secret_id = google_secret_manager_secret.oauth_client_secret.secret_id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.cloudrun_sa.email}"
 }
@@ -131,6 +164,26 @@ resource "google_cloud_run_service" "parkrun_app" {
           }
         }
 
+        env {
+          name = "GOOGLE_CLIENT_ID"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_id.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GOOGLE_CLIENT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_secret.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
         resources {
           limits = {
             cpu    = "1000m"
@@ -155,5 +208,19 @@ resource "google_cloud_run_service_iam_member" "public_access" {
   location = google_cloud_run_service.parkrun_app.location
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+# Custom domain mapping
+resource "google_cloud_run_domain_mapping" "custom_domain" {
+  location = var.region
+  name     = "api.cc6.co.uk"
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_service.parkrun_app.name
+  }
 }
 
