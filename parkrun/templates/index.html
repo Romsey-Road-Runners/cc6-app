@@ -50,14 +50,31 @@
         <div class="form-group">
             <label for="club">Running Club:</label>
             <select id="club" name="club" required>
-                <option value="">Select a club</option>
-                {% for club in clubs %}
-                    <option value="{{ club }}">{{ club }}</option>
-                {% endfor %}
+                <option value="">Loading clubs...</option>
             </select>
         </div>
         
         <button type="submit">Register</button>
     </form>
+    
+    <script>
+        // Fetch clubs from API and populate dropdown
+        fetch('/api/clubs')
+            .then(response => response.json())
+            .then(clubs => {
+                const select = document.getElementById('club');
+                select.innerHTML = '<option value="">Select a club</option>';
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club;
+                    option.textContent = club;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading clubs:', error);
+                document.getElementById('club').innerHTML = '<option value="">Error loading clubs</option>';
+            });
+    </script>
 </body>
 </html>

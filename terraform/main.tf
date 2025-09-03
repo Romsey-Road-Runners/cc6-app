@@ -54,6 +54,11 @@ resource "google_project_service" "cloudrun" {
   service = "run.googleapis.com"
 }
 
+# Enable Cloud Build API
+resource "google_project_service" "cloudbuild" {
+  service = "cloudbuild.googleapis.com"
+}
+
 # Build and push Docker image using gcloud
 resource "null_resource" "docker_build" {
   provisioner "local-exec" {
@@ -63,11 +68,12 @@ resource "null_resource" "docker_build" {
     EOT
   }
   
-  depends_on = [google_project_service.cloudrun]
+  depends_on = [google_project_service.cloudbuild]
   
   triggers = {
     dockerfile_hash = filemd5("../parkrun/Dockerfile")
     app_hash       = filemd5("../parkrun/app.py")
+    pipfile_hash   = filemd5("../parkrun/Pipfile")
   }
 }
 
@@ -84,12 +90,26 @@ resource "google_secret_manager_secret_iam_member" "secret_access" {
   member    = "serviceAccount:${google_service_account.cloudrun_sa.email}"
 }
 
+# Grant Firestore access
+resource "google_project_iam_member" "firestore_access" {
+  project = var.project_id
+  role    = "roles/datastore.user"
+  member  = "serviceAccount:${google_service_account.cloudrun_sa.email}"
+}
+
 # Deploy Cloud Run service
 resource "google_cloud_run_service" "parkrun_app" {
   name     = "parkrun-app"
   location = var.region
 
   template {
+    metadata {
+      annotations = {
+        "run.googleapis.com/execution-environment" = "gen2"
+        "build-trigger" = null_resource.docker_build.id
+      }
+    }
+    
     spec {
       service_account_name = google_service_account.cloudrun_sa.email
       
