@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registered Participants</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: bold; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 15px; text-decoration: none; color: #007cba; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Register</a>
+        <a href="/participants">View Participants</a>
+    </div>
+    
+    <h1>Registered Participants</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Barcode</th>
+                <th>Club</th>
+                <th>Registered</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for participant in participants %}
+            <tr>
+                <td>{{ participant.get('name') }}</td>
+                <td>{{ participant.get('barcode') }}</td>
+                <td>{{ participant.get('club') }}</td>
+                <td>{{ participant.get('registered_at').strftime('%Y-%m-%d %H:%M') if participant.get('registered_at') else 'N/A' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No participants registered yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -19,3 +19,12 @@
 - Enables Firestore and App Engine APIs
 - Creates App Engine application
 - Sets up Firestore database in native mode
+- Deploys the Parkrun registration app
+- Creates storage bucket for app source code
+
+## App Deployment
+The OpenTofu configuration will:
+1. Package your app code into a zip file
+2. Upload it to Google Cloud Storage
+3. Deploy it to App Engine
+4. Output the app URL

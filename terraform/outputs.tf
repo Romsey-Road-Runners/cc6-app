@@ -3,7 +3,12 @@ output "firestore_database_name" {
   value       = google_firestore_database.database.name
 }
 
-output "app_engine_url" {
-  description = "App Engine application URL"
-  value       = "https://${var.project_id}.appspot.com"
+output "cloud_run_url" {
+  description = "Cloud Run service URL"
+  value       = google_cloud_run_service.parkrun_app.status[0].url
+}
+
+output "service_name" {
+  description = "Cloud Run service name"
+  value       = google_cloud_run_service.parkrun_app.name
 }
