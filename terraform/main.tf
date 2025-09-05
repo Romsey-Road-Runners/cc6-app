@@ -92,9 +92,7 @@ resource "null_resource" "docker_build" {
   depends_on = [google_project_service.cloudbuild]
 
   triggers = {
-    dockerfile_hash = filemd5("../api/Dockerfile")
-    app_hash        = filemd5("../api/app.py")
-    pipfile_hash    = filemd5("../api/Pipfile")
+    source_hash = sha256(join("", [for f in fileset("../api", "**") : filesha256("../api/${f}")]))
   }
 }
 
