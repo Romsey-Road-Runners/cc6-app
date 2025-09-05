@@ -1,0 +1,11 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+    volumes:
+      - .:/app
+    command: python -m pytest test_app.py -v

@@ -1,0 +1,10 @@
+FROM python:3.13-slim
+
+WORKDIR /app
+
+COPY Pipfile Pipfile.lock ./
+RUN pip install pipenv && pipenv install --dev --system
+
+COPY . .
+
+CMD ["python", "-m", "pytest", "test_app.py", "-v"]
