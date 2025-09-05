@@ -54,3 +54,80 @@ def get_club_id_by_name(club_name):
 def validate_barcode(barcode):
     """Validate Parkrun barcode format (A followed by 6-7 digits)"""
     return re.match(r"^A\d{6,7}$", barcode.upper()) is not None
+
+
+def get_all_clubs():
+    """Get all running clubs"""
+    clubs = db.collection("running_clubs").get()
+    return [club.to_dict()["name"] for club in clubs]
+
+
+def club_exists(club_name):
+    """Check if club exists"""
+    existing = (
+        db.collection("running_clubs")
+        .where(filter=firestore.FieldFilter("name", "==", club_name))
+        .get()
+    )
+    return len(existing) > 0
+
+
+def barcode_exists(barcode, exclude_participant_id=None):
+    """Check if barcode already exists"""
+    existing = (
+        db.collection("participants")
+        .where(filter=firestore.FieldFilter("barcode", "==", barcode))
+        .get()
+    )
+    if not existing:
+        return False
+    return exclude_participant_id is None or existing[0].id != exclude_participant_id
+
+
+def create_participant(data):
+    """Create new participant"""
+    data["registered_at"] = firestore.SERVER_TIMESTAMP
+    return db.collection("participants").add(data)
+
+
+def update_participant(participant_id, data):
+    """Update existing participant"""
+    return db.collection("participants").document(participant_id).update(data)
+
+
+def get_participants():
+    """Get all non-deleted participants"""
+    all_participants = (
+        db.collection("participants")
+        .order_by("registered_at", direction=firestore.Query.DESCENDING)
+        .get()
+    )
+    participants = []
+    for p in all_participants:
+        if not p.to_dict().get("deleted", False):
+            participant_data = p.to_dict()
+            participant_data["id"] = p.id
+            participants.append(participant_data)
+    return participants
+
+
+def get_participant(participant_id):
+    """Get single participant"""
+    return db.collection("participants").document(participant_id).get()
+
+
+def get_clubs_ordered():
+    """Get all clubs ordered by name"""
+    return db.collection("running_clubs").order_by("name").get()
+
+
+def add_club(club_name):
+    """Add new club"""
+    return db.collection("running_clubs").add({"name": club_name})
+
+
+def soft_delete_participant(participant_id):
+    """Soft delete participant"""
+    return (
+        db.collection("participants").document(participant_id).update({"deleted": True})
+    )

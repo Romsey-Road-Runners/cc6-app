@@ -8,10 +8,22 @@ from flask import (
     jsonify,
     session,
 )
-from google.cloud import firestore
 import os
 from auth import init_oauth, login_required
-from database import db, init_running_clubs, get_club_id_by_name, validate_barcode
+from database import (
+    init_running_clubs,
+    validate_barcode,
+    get_all_clubs,
+    club_exists,
+    barcode_exists,
+    create_participant,
+    update_participant,
+    get_participants,
+    get_participant,
+    get_clubs_ordered,
+    add_club,
+    soft_delete_participant,
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
@@ -31,9 +43,7 @@ def index():
 @app.route("/api/clubs")
 def get_clubs():
     """API endpoint to get running clubs"""
-    clubs = db.collection("running_clubs").get()
-    club_list = [club.to_dict()["name"] for club in clubs]
-    return jsonify(club_list)
+    return jsonify(get_all_clubs())
 
 
 @app.route("/register", methods=["POST"])
@@ -77,19 +87,12 @@ def register(participant_id=None):
         return redirect(url_for("participants" if participant_id else "index"))
 
     # Validate club exists
-    clubs = db.collection("running_clubs").get()
-    club_names = [c.to_dict()["name"] for c in clubs]
-    if club not in club_names:
+    if not club_exists(club):
         flash("Please select a valid running club")
         return redirect(url_for("participants" if participant_id else "index"))
 
-    # Check if barcode already exists (skip for edits of same participant)
-    existing = (
-        db.collection("participants")
-        .where(filter=firestore.FieldFilter("barcode", "==", barcode))
-        .get()
-    )
-    if existing and (not participant_id or existing[0].id != participant_id):
+    # Check if barcode already exists
+    if barcode_exists(barcode, participant_id):
         flash("This barcode is already registered")
         return redirect(url_for("participants" if participant_id else "index"))
 
@@ -106,11 +109,10 @@ def register(participant_id=None):
         }
 
         if participant_id:
-            db.collection("participants").document(participant_id).update(data)
+            update_participant(participant_id, data)
             flash("Participant updated successfully!")
         else:
-            data["registered_at"] = firestore.SERVER_TIMESTAMP
-            db.collection("participants").add(data)
+            create_participant(data)
             flash("Registration successful!")
     except Exception as e:
         flash("Operation failed. Please try again.")
@@ -146,19 +148,7 @@ def logout():
 @login_required
 def participants():
     """View all registered participants"""
-    all_participants = (
-        db.collection("participants")
-        .order_by("registered_at", direction=firestore.Query.DESCENDING)
-        .get()
-    )
-
-    # Filter out soft-deleted participants
-    participants = []
-    for p in all_participants:
-        if not p.to_dict().get("deleted", False):
-            participant_data = p.to_dict()
-            participant_data["id"] = p.id
-            participants.append(participant_data)
+    participants = get_participants()
     return render_template(
         "participants.html", participants=participants, user=session.get("user")
     )
@@ -168,7 +158,7 @@ def participants():
 @login_required
 def clubs():
     """View all running clubs"""
-    clubs = db.collection("running_clubs").order_by("name").get()
+    clubs = get_clubs_ordered()
     return render_template("clubs.html", clubs=clubs, user=session.get("user"))
 
 
@@ -183,18 +173,13 @@ def add_club():
         return redirect(url_for("clubs"))
 
     # Check if club already exists
-    existing = (
-        db.collection("running_clubs")
-        .where(filter=firestore.FieldFilter("name", "==", club_name))
-        .get()
-    )
-    if existing:
+    if club_exists(club_name):
         flash("Club already exists")
         return redirect(url_for("clubs"))
 
     # Add new club
     try:
-        db.collection("running_clubs").add({"name": club_name})
+        add_club(club_name)
         flash("Club added successfully!")
     except Exception as e:
         flash("Failed to add club. Please try again.")
@@ -206,8 +191,8 @@ def add_club():
 @login_required
 def edit_participant(participant_id):
     """Show edit participant form"""
-    participant = db.collection("participants").document(participant_id).get()
-    clubs = [club.to_dict()["name"] for club in db.collection("running_clubs").get()]
+    participant = get_participant(participant_id)
+    clubs = get_all_clubs()
     return render_template(
         "edit_participant.html",
         participant=participant,
@@ -221,7 +206,7 @@ def edit_participant(participant_id):
 def delete_participant(participant_id):
     """Soft delete a participant"""
     try:
-        db.collection("participants").document(participant_id).update({"deleted": True})
+        soft_delete_participant(participant_id)
         flash("Participant deleted successfully!")
     except Exception as e:
         flash("Failed to delete participant.")

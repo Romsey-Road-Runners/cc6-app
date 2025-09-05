@@ -1,6 +1,11 @@
 import unittest
 from app import app
-from database import validate_barcode, get_club_id_by_name, init_running_clubs
+from database import (
+    validate_barcode,
+    get_club_id_by_name,
+    init_running_clubs,
+    get_all_clubs,
+)
 
 
 class TestApp(unittest.TestCase):
