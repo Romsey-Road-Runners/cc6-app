@@ -40,6 +40,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/robots.txt")
+def robots_txt():
+    return app.send_static_file("robots.txt")
+
+
 @app.route("/api/clubs")
 def get_clubs():
     """API endpoint to get running clubs"""
