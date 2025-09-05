@@ -11,26 +11,8 @@ from flask import (
     url_for,
 )
 
+import database
 from auth import init_oauth, login_required
-from database import (
-    add_admin_email,
-    add_club,
-    barcode_exists,
-    club_exists,
-    create_participant,
-    get_admin_emails,
-    get_all_clubs,
-    get_clubs_ordered,
-    get_participant,
-    get_participants,
-    init_admin_emails,
-    init_running_clubs,
-    is_admin_email,
-    remove_admin_email,
-    soft_delete_participant,
-    update_participant,
-    validate_barcode,
-)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
@@ -39,8 +21,8 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
 google = init_oauth(app)
 
 # Initialize running clubs and admin emails on app startup
-init_running_clubs()
-init_admin_emails()
+database.init_running_clubs()
+database.init_admin_emails()
 
 
 @app.route("/")
@@ -56,7 +38,7 @@ def robots_txt():
 @app.route("/api/clubs")
 def get_clubs():
     """API endpoint to get running clubs"""
-    return jsonify(get_all_clubs())
+    return jsonify(database.get_all_clubs())
 
 
 @app.route("/register", methods=["POST"])
@@ -95,17 +77,17 @@ def register(participant_id=None):
         flash("Date of birth is required")
         return redirect(url_for("participants" if participant_id else "index"))
 
-    if not validate_barcode(barcode):
+    if not database.validate_barcode(barcode):
         flash("Invalid barcode format (should be A followed by 6-7 digits)")
         return redirect(url_for("participants" if participant_id else "index"))
 
     # Validate club exists
-    if not club_exists(club):
+    if not database.club_exists(club):
         flash("Please select a valid running club")
         return redirect(url_for("participants" if participant_id else "index"))
 
     # Check if barcode already exists
-    if barcode_exists(barcode, participant_id):
+    if database.barcode_exists(barcode, participant_id):
         flash("This barcode is already registered")
         return redirect(url_for("participants" if participant_id else "index"))
 
@@ -122,10 +104,10 @@ def register(participant_id=None):
         }
 
         if participant_id:
-            update_participant(participant_id, data)
+            database.update_participant(participant_id, data)
             flash("Participant updated successfully!")
         else:
-            create_participant(data)
+            database.create_participant(data)
             flash("Registration successful!")
     except Exception:
         flash("Operation failed. Please try again.")
@@ -143,7 +125,7 @@ def login():
 def auth_callback():
     token = google.authorize_access_token()
     user = token.get("userinfo")
-    if user and is_admin_email(user.get("email")):
+    if user and database.is_admin_email(user.get("email")):
         session["user"] = user
         return redirect(url_for("participants"))
     else:
@@ -161,7 +143,7 @@ def logout():
 @login_required
 def participants():
     """View all registered participants"""
-    participants = get_participants()
+    participants = database.get_participants()
     return render_template(
         "participants.html", participants=participants, user=session.get("user")
     )
@@ -171,7 +153,7 @@ def participants():
 @login_required
 def clubs():
     """View all running clubs"""
-    clubs = get_clubs_ordered()
+    clubs = database.get_clubs_ordered()
     return render_template("clubs.html", clubs=clubs, user=session.get("user"))
 
 
@@ -186,13 +168,13 @@ def add_club():
         return redirect(url_for("clubs"))
 
     # Check if club already exists
-    if club_exists(club_name):
+    if database.club_exists(club_name):
         flash("Club already exists")
         return redirect(url_for("clubs"))
 
     # Add new club
     try:
-        add_club(club_name)
+        database.add_club(club_name)
         flash("Club added successfully!")
     except Exception:
         flash("Failed to add club. Please try again.")
@@ -204,8 +186,8 @@ def add_club():
 @login_required
 def edit_participant(participant_id):
     """Show edit participant form"""
-    participant = get_participant(participant_id)
-    clubs = get_all_clubs()
+    participant = database.get_participant(participant_id)
+    clubs = database.get_all_clubs()
     return render_template(
         "edit_participant.html",
         participant=participant,
@@ -219,7 +201,7 @@ def edit_participant(participant_id):
 def delete_participant(participant_id):
     """Soft delete a participant"""
     try:
-        soft_delete_participant(participant_id)
+        database.soft_delete_participant(participant_id)
         flash("Participant deleted successfully!")
     except Exception:
         flash("Failed to delete participant.")
@@ -230,7 +212,7 @@ def delete_participant(participant_id):
 @login_required
 def admins():
     """View all admin emails"""
-    admin_emails = get_admin_emails()
+    admin_emails = database.get_admin_emails()
     return render_template(
         "admins.html", admin_emails=admin_emails, user=session.get("user")
     )
@@ -246,12 +228,12 @@ def add_admin():
         flash("Email is required")
         return redirect(url_for("admins"))
 
-    if email in get_admin_emails():
+    if email in database.get_admin_emails():
         flash("Email already exists")
         return redirect(url_for("admins"))
 
     try:
-        add_admin_email(email)
+        database.add_admin_email(email)
         flash("Admin email added successfully!")
     except Exception:
         flash("Failed to add admin email.")
@@ -265,7 +247,7 @@ def remove_admin():
     """Remove an admin email"""
     email = request.form.get("email", "").strip()
 
-    if remove_admin_email(email):
+    if database.remove_admin_email(email):
         flash("Admin email removed successfully!")
     else:
         flash("Failed to remove admin email.")
