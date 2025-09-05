@@ -20,8 +20,7 @@
 <body>
     <div class="nav">
         <a href="/">Register</a>
-        <a href="{{ url_for('participants') }}">Participants</a>
-        <a href="{{ url_for('clubs') }}">Clubs</a>
+        <a href="{{ url_for('participants') }}">Admin</a>
     </div>
     
     <h1>CC6 Registration</h1>
@@ -53,12 +52,11 @@
         </div>
         
         <div class="form-group">
-            <label for="gender">Gender:</label>
-            <select id="gender" name="gender" required>
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-            </select>
+            <label>Gender:</label>
+            <input type="radio" id="male" name="gender" value="Male" required>
+            <label for="male" style="display: inline; margin-left: 5px; margin-right: 15px; font-weight: normal;">Male</label>
+            <input type="radio" id="female" name="gender" value="Female" required>
+            <label for="female" style="display: inline; margin-left: 5px; font-weight: normal;">Female</label>
         </div>
         
         <div class="form-group">

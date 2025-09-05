@@ -33,6 +33,7 @@
                 <th>Barcode</th>
                 <th>Club</th>
                 <th>Registered</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -46,10 +47,16 @@
                 <td>{{ participant.get('barcode') }}</td>
                 <td>{{ participant.get('club') }}</td>
                 <td>{{ participant.get('registered_at').strftime('%Y-%m-%d %H:%M') if participant.get('registered_at') else 'N/A' }}</td>
+                <td>
+                    <a href="{{ url_for('edit_participant', participant_id=participant.get('id')) }}" style="margin-right: 10px; color: #007bff;">Edit</a>
+                    <form method="POST" action="{{ url_for('delete_participant', participant_id=participant.get('id')) }}" style="display: inline;" onsubmit="return confirm('Are you sure?')">
+                        <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer;">Delete</button>
+                    </form>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="8">No participants registered yet.</td>
+                <td colspan="9">No participants registered yet.</td>
             </tr>
             {% endfor %}
         </tbody>

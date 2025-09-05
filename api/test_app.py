@@ -45,6 +45,88 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/register", data={})
         self.assertEqual(response.status_code, 302)
 
+    def test_register_valid_data(self):
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@example.com",
+            "gender": "Male",
+            "dob": "1990-01-01",
+            "barcode": "A123456",
+            "club": "Chandler's Ford Swifts",
+        }
+        response = self.client.post("/register", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_register_invalid_barcode(self):
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@example.com",
+            "gender": "Male",
+            "dob": "1990-01-01",
+            "barcode": "B123456",
+            "club": "Chandler's Ford Swifts",
+        }
+        response = self.client.post("/register", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_edit_participant_requires_auth(self):
+        data = {
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "email": "jane@example.com",
+            "gender": "Female",
+            "dob": "1990-01-01",
+            "barcode": "A654321",
+            "club": "Chandler's Ford Swifts",
+        }
+        response = self.client.post("/edit_participant/test_id", data=data)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login", response.location)
+
+    def test_edit_participant_with_auth(self):
+        # Simulate logged in user
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        data = {
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "email": "jane@example.com",
+            "gender": "Female",
+            "dob": "1990-01-01",
+            "barcode": "A654321",
+            "club": "Chandler's Ford Swifts",
+        }
+        response = self.client.post("/edit_participant/test_id", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_register_missing_first_name(self):
+        data = {
+            "last_name": "Doe",
+            "email": "john@example.com",
+            "gender": "Male",
+            "dob": "1990-01-01",
+            "barcode": "A123456",
+            "club": "Chandler's Ford Swifts",
+        }
+        response = self.client.post("/register", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_register_invalid_club(self):
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@example.com",
+            "gender": "Male",
+            "dob": "1990-01-01",
+            "barcode": "A123456",
+            "club": "Invalid Club",
+        }
+        response = self.client.post("/register", data=data)
+        self.assertEqual(response.status_code, 302)
+
 
 if __name__ == "__main__":
     unittest.main()

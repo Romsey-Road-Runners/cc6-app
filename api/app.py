@@ -19,6 +19,9 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
 # Initialize OAuth
 google = init_oauth(app)
 
+# Initialize running clubs on app startup
+init_running_clubs()
+
 
 @app.route("/")
 def index():
@@ -34,7 +37,12 @@ def get_clubs():
 
 
 @app.route("/register", methods=["POST"])
-def register():
+@app.route("/edit_participant/<participant_id>", methods=["POST"])
+def register(participant_id=None):
+    # Require authentication for edits
+    if participant_id and "user" not in session:
+        return redirect(url_for("login"))
+
     first_name = request.form.get("first_name", "").strip()
     last_name = request.form.get("last_name", "").strip()
     email = request.form.get("email", "").strip()
@@ -46,58 +54,68 @@ def register():
     # Validation
     if not first_name:
         flash("First name is required")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
     if not last_name:
         flash("Last name is required")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
     if not email:
         flash("Email is required")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
     if not gender:
         flash("Gender is required")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
     if not dob:
         flash("Date of birth is required")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
     if not validate_barcode(barcode):
         flash("Invalid barcode format (should be A followed by 6-7 digits)")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
-    club_id = get_club_id_by_name(club)
-    if not club_id:
+    # Validate club exists
+    clubs = db.collection("running_clubs").get()
+    club_names = [c.to_dict()["name"] for c in clubs]
+    if club not in club_names:
         flash("Please select a valid running club")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
-    # Check if barcode already exists
-    existing = db.collection("participants").where("barcode", "==", barcode).get()
-    if existing:
+    # Check if barcode already exists (skip for edits of same participant)
+    existing = (
+        db.collection("participants")
+        .where(filter=firestore.FieldFilter("barcode", "==", barcode))
+        .get()
+    )
+    if existing and (not participant_id or existing[0].id != participant_id):
         flash("This barcode is already registered")
-        return redirect(url_for("index"))
+        return redirect(url_for("participants" if participant_id else "index"))
 
-    # Save to Firestore
+    # Save or update Firestore
     try:
-        db.collection("participants").add(
-            {
-                "first_name": first_name,
-                "last_name": last_name,
-                "email": email,
-                "gender": gender,
-                "date_of_birth": dob,
-                "barcode": barcode,
-                "club_id": club_id,
-                "registered_at": firestore.SERVER_TIMESTAMP,
-            }
-        )
-        flash("Registration successful!")
-    except Exception as e:
-        flash("Registration failed. Please try again.")
+        data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "gender": gender,
+            "date_of_birth": dob,
+            "barcode": barcode,
+            "club": club,
+        }
 
-    return redirect(url_for("index"))
+        if participant_id:
+            db.collection("participants").document(participant_id).update(data)
+            flash("Participant updated successfully!")
+        else:
+            data["registered_at"] = firestore.SERVER_TIMESTAMP
+            db.collection("participants").add(data)
+            flash("Registration successful!")
+    except Exception as e:
+        flash("Operation failed. Please try again.")
+
+    return redirect(url_for("participants" if participant_id else "index"))
 
 
 @app.route("/login")
@@ -128,11 +146,19 @@ def logout():
 @login_required
 def participants():
     """View all registered participants"""
-    participants = (
+    all_participants = (
         db.collection("participants")
         .order_by("registered_at", direction=firestore.Query.DESCENDING)
         .get()
     )
+
+    # Filter out soft-deleted participants
+    participants = []
+    for p in all_participants:
+        if not p.to_dict().get("deleted", False):
+            participant_data = p.to_dict()
+            participant_data["id"] = p.id
+            participants.append(participant_data)
     return render_template(
         "participants.html", participants=participants, user=session.get("user")
     )
@@ -157,7 +183,11 @@ def add_club():
         return redirect(url_for("clubs"))
 
     # Check if club already exists
-    existing = db.collection("running_clubs").where("name", "==", club_name).get()
+    existing = (
+        db.collection("running_clubs")
+        .where(filter=firestore.FieldFilter("name", "==", club_name))
+        .get()
+    )
     if existing:
         flash("Club already exists")
         return redirect(url_for("clubs"))
@@ -172,7 +202,32 @@ def add_club():
     return redirect(url_for("clubs"))
 
 
+@app.route("/edit_participant/<participant_id>", methods=["GET"])
+@login_required
+def edit_participant(participant_id):
+    """Show edit participant form"""
+    participant = db.collection("participants").document(participant_id).get()
+    clubs = [club.to_dict()["name"] for club in db.collection("running_clubs").get()]
+    return render_template(
+        "edit_participant.html",
+        participant=participant,
+        clubs=clubs,
+        user=session.get("user"),
+    )
+
+
+@app.route("/delete_participant/<participant_id>", methods=["POST"])
+@login_required
+def delete_participant(participant_id):
+    """Soft delete a participant"""
+    try:
+        db.collection("participants").document(participant_id).update({"deleted": True})
+        flash("Participant deleted successfully!")
+    except Exception as e:
+        flash("Failed to delete participant.")
+    return redirect(url_for("participants"))
+
+
 if __name__ == "__main__":
-    init_running_clubs()
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
