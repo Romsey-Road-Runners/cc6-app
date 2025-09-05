@@ -1,5 +1,6 @@
-from google.cloud import firestore
 import re
+
+from google.cloud import firestore
 
 # Initialize Firestore
 db = firestore.Client()

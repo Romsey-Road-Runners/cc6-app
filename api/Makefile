@@ -1,4 +1,4 @@
-.PHONY: test clean format
+.PHONY: test clean format lint
 
 test:
 	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
@@ -6,6 +6,9 @@ test:
 
 format:
 	black *.py
+
+lint:
+	ruff check *.py --fix
 
 clean:
 	docker compose -f docker-compose.test.yml down --volumes --remove-orphans

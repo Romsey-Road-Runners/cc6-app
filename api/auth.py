@@ -1,7 +1,8 @@
-from flask import redirect, url_for, session
-from authlib.integrations.flask_client import OAuth
-from functools import wraps
 import os
+from functools import wraps
+
+from authlib.integrations.flask_client import OAuth
+from flask import redirect, session, url_for
 
 
 def init_oauth(app):

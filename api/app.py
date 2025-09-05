@@ -1,33 +1,35 @@
+import os
+
 from flask import (
     Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
     flash,
     jsonify,
+    redirect,
+    render_template,
+    request,
     session,
+    url_for,
 )
-import os
+
 from auth import init_oauth, login_required
 from database import (
-    init_running_clubs,
-    init_admin_emails,
-    validate_barcode,
-    get_all_clubs,
-    club_exists,
-    barcode_exists,
-    create_participant,
-    update_participant,
-    get_participants,
-    get_participant,
-    get_clubs_ordered,
-    add_club,
-    soft_delete_participant,
-    is_admin_email,
-    get_admin_emails,
     add_admin_email,
+    add_club,
+    barcode_exists,
+    club_exists,
+    create_participant,
+    get_admin_emails,
+    get_all_clubs,
+    get_clubs_ordered,
+    get_participant,
+    get_participants,
+    init_admin_emails,
+    init_running_clubs,
+    is_admin_email,
     remove_admin_email,
+    soft_delete_participant,
+    update_participant,
+    validate_barcode,
 )
 
 app = Flask(__name__)
@@ -125,7 +127,7 @@ def register(participant_id=None):
         else:
             create_participant(data)
             flash("Registration successful!")
-    except Exception as e:
+    except Exception:
         flash("Operation failed. Please try again.")
 
     return redirect(url_for("participants" if participant_id else "index"))
@@ -192,7 +194,7 @@ def add_club():
     try:
         add_club(club_name)
         flash("Club added successfully!")
-    except Exception as e:
+    except Exception:
         flash("Failed to add club. Please try again.")
 
     return redirect(url_for("clubs"))
@@ -219,7 +221,7 @@ def delete_participant(participant_id):
     try:
         soft_delete_participant(participant_id)
         flash("Participant deleted successfully!")
-    except Exception as e:
+    except Exception:
         flash("Failed to delete participant.")
     return redirect(url_for("participants"))
 
@@ -251,7 +253,7 @@ def add_admin():
     try:
         add_admin_email(email)
         flash("Admin email added successfully!")
-    except Exception as e:
+    except Exception:
         flash("Failed to add admin email.")
 
     return redirect(url_for("admins"))
