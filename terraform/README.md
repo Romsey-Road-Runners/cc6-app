@@ -19,7 +19,7 @@
 - Enables Firestore and App Engine APIs
 - Creates App Engine application
 - Sets up Firestore database in native mode
-- Deploys the Parkrun registration app
+- Deploys the CC6 API app
 - Creates storage bucket for app source code
 
 ## App Deployment

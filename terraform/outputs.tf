@@ -5,12 +5,12 @@ output "firestore_database_name" {
 
 output "cloud_run_url" {
   description = "Cloud Run service URL"
-  value       = google_cloud_run_service.parkrun_app.status[0].url
+  value       = google_cloud_run_service.api_app.status[0].url
 }
 
 output "service_name" {
   description = "Cloud Run service name"
-  value       = google_cloud_run_service.parkrun_app.name
+  value       = google_cloud_run_service.api_app.name
 }
 
 output "custom_domain_dns" {

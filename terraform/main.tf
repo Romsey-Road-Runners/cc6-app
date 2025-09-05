@@ -84,24 +84,24 @@ resource "google_secret_manager_secret" "oauth_client_secret" {
 resource "null_resource" "docker_build" {
   provisioner "local-exec" {
     command = <<-EOT
-      cd ../parkrun
-      gcloud builds submit --project ${var.project_id} --tag gcr.io/${var.project_id}/parkrun-app
+      cd ../api
+      gcloud builds submit --project ${var.project_id} --tag gcr.io/${var.project_id}/api
     EOT
   }
 
   depends_on = [google_project_service.cloudbuild]
 
   triggers = {
-    dockerfile_hash = filemd5("../parkrun/Dockerfile")
-    app_hash        = filemd5("../parkrun/app.py")
-    pipfile_hash    = filemd5("../parkrun/Pipfile")
+    dockerfile_hash = filemd5("../api/Dockerfile")
+    app_hash        = filemd5("../api/app.py")
+    pipfile_hash    = filemd5("../api/Pipfile")
   }
 }
 
 # Create service account for Cloud Run
 resource "google_service_account" "cloudrun_sa" {
-  account_id   = "parkrun-cloudrun"
-  display_name = "Parkrun Cloud Run Service Account"
+  account_id   = "cc6-api-cloudrun"
+  display_name = "CC6 API Cloud Run Service Account"
 }
 
 # Grant access to secrets
@@ -131,8 +131,8 @@ resource "google_project_iam_member" "firestore_access" {
 }
 
 # Deploy Cloud Run service
-resource "google_cloud_run_service" "parkrun_app" {
-  name     = "parkrun-app"
+resource "google_cloud_run_service" "api_app" {
+  name     = "api-app"
   location = var.region
 
   template {
@@ -147,7 +147,7 @@ resource "google_cloud_run_service" "parkrun_app" {
       service_account_name = google_service_account.cloudrun_sa.email
 
       containers {
-        image = "gcr.io/${var.project_id}/parkrun-app:latest"
+        image = "gcr.io/${var.project_id}/api-app:latest"
 
         env {
           name  = "GOOGLE_CLOUD_PROJECT"
@@ -204,8 +204,8 @@ resource "google_cloud_run_service" "parkrun_app" {
 
 # Allow unauthenticated access
 resource "google_cloud_run_service_iam_member" "public_access" {
-  service  = google_cloud_run_service.parkrun_app.name
-  location = google_cloud_run_service.parkrun_app.location
+  service  = google_cloud_run_service.api_app.name
+  location = google_cloud_run_service.api_app.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
@@ -220,7 +220,7 @@ resource "google_cloud_run_domain_mapping" "custom_domain" {
   }
 
   spec {
-    route_name = google_cloud_run_service.parkrun_app.name
+    route_name = google_cloud_run_service.api_app.name
   }
 }
 
