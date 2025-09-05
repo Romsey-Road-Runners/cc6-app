@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Running Clubs</title>
+    <title>Admin Emails</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -17,7 +17,7 @@
         <a href="{{ url_for('logout') }}">Logout</a>
     </div>
 
-    <h1>Running Clubs</h1>
+    <h1>Admin Emails</h1>
     
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -29,24 +29,31 @@
         {% endif %}
     {% endwith %}
     
-    <form method="POST" action="{{ url_for('add_club') }}">
+    <form method="POST" action="{{ url_for('add_admin') }}">
         <div class="form-group">
-            <label for="club_name">Club Name:</label>
-            <input type="text" id="club_name" name="club_name" placeholder="Enter club name" required>
+            <label for="email">Admin Email:</label>
+            <input type="email" id="email" name="email" placeholder="Enter admin email" required>
         </div>
-        <button type="submit">Add Club</button>
+        <button type="submit">Add Admin</button>
     </form>
     
     <table>
         <thead>
             <tr>
-                <th>Club Name</th>
+                <th>Email</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for club in clubs %}
+            {% for email in admin_emails %}
             <tr>
-                <td>{{ club.to_dict().name }}</td>
+                <td>{{ email }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('remove_admin') }}" style="display: inline;" onsubmit="return confirm('Are you sure?')">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer;">Remove</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

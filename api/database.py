@@ -131,3 +131,37 @@ def soft_delete_participant(participant_id):
     return (
         db.collection("participants").document(participant_id).update({"deleted": True})
     )
+
+
+def init_admin_emails():
+    """Initialize admin emails if not present"""
+    admins_ref = db.collection("admin_emails")
+    existing_admins = admins_ref.get()
+
+    if not existing_admins:
+        admins_ref.add({"email": "weston.sam@gmail.com"})
+
+
+def get_admin_emails():
+    """Get all admin emails"""
+    admins = db.collection("admin_emails").get()
+    return [admin.to_dict()["email"] for admin in admins]
+
+
+def is_admin_email(email):
+    """Check if email is an admin"""
+    return email in get_admin_emails()
+
+
+def add_admin_email(email):
+    """Add new admin email"""
+    return db.collection("admin_emails").add({"email": email})
+
+
+def remove_admin_email(email):
+    """Remove admin email"""
+    admins = db.collection("admin_emails").where("email", "==", email).get()
+    if admins:
+        db.collection("admin_emails").document(admins[0].id).delete()
+        return True
+    return False

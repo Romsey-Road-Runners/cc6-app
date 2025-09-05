@@ -12,6 +12,10 @@ from database import (
     get_clubs_ordered,
     add_club,
     soft_delete_participant,
+    get_admin_emails,
+    is_admin_email,
+    add_admin_email,
+    remove_admin_email,
 )
 
 
@@ -139,6 +143,58 @@ class TestDatabase(unittest.TestCase):
         mock_db.collection.return_value.document.return_value.update.assert_called_with(
             {"deleted": True}
         )
+
+    @patch("database.db")
+    def test_get_admin_emails(self, mock_db):
+        mock_admin = Mock()
+        mock_admin.to_dict.return_value = {"email": "admin@test.com"}
+        mock_db.collection.return_value.get.return_value = [mock_admin]
+
+        result = get_admin_emails()
+        self.assertEqual(result, ["admin@test.com"])
+
+    @patch("database.get_admin_emails")
+    def test_is_admin_email_true(self, mock_get_admin_emails):
+        mock_get_admin_emails.return_value = ["admin@test.com"]
+
+        result = is_admin_email("admin@test.com")
+        self.assertTrue(result)
+
+    @patch("database.get_admin_emails")
+    def test_is_admin_email_false(self, mock_get_admin_emails):
+        mock_get_admin_emails.return_value = ["admin@test.com"]
+
+        result = is_admin_email("user@test.com")
+        self.assertFalse(result)
+
+    @patch("database.db")
+    def test_add_admin_email(self, mock_db):
+        add_admin_email("new@test.com")
+
+        mock_db.collection.assert_called_with("admin_emails")
+        mock_db.collection.return_value.add.assert_called_with(
+            {"email": "new@test.com"}
+        )
+
+    @patch("database.db")
+    def test_remove_admin_email_success(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.id = "test_id"
+        mock_db.collection.return_value.where.return_value.get.return_value = [mock_doc]
+
+        result = remove_admin_email("admin@test.com")
+
+        self.assertTrue(result)
+        mock_db.collection.return_value.document.assert_called_with("test_id")
+        mock_db.collection.return_value.document.return_value.delete.assert_called_once()
+
+    @patch("database.db")
+    def test_remove_admin_email_not_found(self, mock_db):
+        mock_db.collection.return_value.where.return_value.get.return_value = []
+
+        result = remove_admin_email("nonexistent@test.com")
+
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":

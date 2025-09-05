@@ -132,6 +132,32 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/register", data=data)
         self.assertEqual(response.status_code, 302)
 
+    def test_admins_requires_auth(self):
+        response = self.client.get("/admins")
+        self.assertEqual(response.status_code, 302)
+
+    def test_add_admin_requires_auth(self):
+        response = self.client.post("/add_admin", data={"email": "test@example.com"})
+        self.assertEqual(response.status_code, 302)
+
+    def test_remove_admin_requires_auth(self):
+        response = self.client.post("/remove_admin", data={"email": "test@example.com"})
+        self.assertEqual(response.status_code, 302)
+
+    def test_admins_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/admins")
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_admin_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/add_admin", data={"email": "new@example.com"})
+        self.assertEqual(response.status_code, 302)
+
 
 if __name__ == "__main__":
     unittest.main()

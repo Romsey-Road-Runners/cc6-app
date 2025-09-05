@@ -12,6 +12,7 @@ import os
 from auth import init_oauth, login_required
 from database import (
     init_running_clubs,
+    init_admin_emails,
     validate_barcode,
     get_all_clubs,
     club_exists,
@@ -23,6 +24,10 @@ from database import (
     get_clubs_ordered,
     add_club,
     soft_delete_participant,
+    is_admin_email,
+    get_admin_emails,
+    add_admin_email,
+    remove_admin_email,
 )
 
 app = Flask(__name__)
@@ -31,8 +36,9 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
 # Initialize OAuth
 google = init_oauth(app)
 
-# Initialize running clubs on app startup
+# Initialize running clubs and admin emails on app startup
 init_running_clubs()
+init_admin_emails()
 
 
 @app.route("/")
@@ -135,7 +141,7 @@ def login():
 def auth_callback():
     token = google.authorize_access_token()
     user = token.get("userinfo")
-    if user and user.get("email") == "weston.sam@gmail.com":
+    if user and is_admin_email(user.get("email")):
         session["user"] = user
         return redirect(url_for("participants"))
     else:
@@ -216,6 +222,53 @@ def delete_participant(participant_id):
     except Exception as e:
         flash("Failed to delete participant.")
     return redirect(url_for("participants"))
+
+
+@app.route("/admins")
+@login_required
+def admins():
+    """View all admin emails"""
+    admin_emails = get_admin_emails()
+    return render_template(
+        "admins.html", admin_emails=admin_emails, user=session.get("user")
+    )
+
+
+@app.route("/add_admin", methods=["POST"])
+@login_required
+def add_admin():
+    """Add a new admin email"""
+    email = request.form.get("email", "").strip()
+
+    if not email:
+        flash("Email is required")
+        return redirect(url_for("admins"))
+
+    if email in get_admin_emails():
+        flash("Email already exists")
+        return redirect(url_for("admins"))
+
+    try:
+        add_admin_email(email)
+        flash("Admin email added successfully!")
+    except Exception as e:
+        flash("Failed to add admin email.")
+
+    return redirect(url_for("admins"))
+
+
+@app.route("/remove_admin", methods=["POST"])
+@login_required
+def remove_admin():
+    """Remove an admin email"""
+    email = request.form.get("email", "").strip()
+
+    if remove_admin_email(email):
+        flash("Admin email removed successfully!")
+    else:
+        flash("Failed to remove admin email.")
+
+    return redirect(url_for("admins"))
 
 
 if __name__ == "__main__":
