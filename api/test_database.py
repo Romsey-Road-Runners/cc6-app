@@ -9,7 +9,6 @@ from database import (
     create_participant,
     get_admin_emails,
     get_all_clubs,
-    get_clubs_ordered,
     get_participant,
     get_participants,
     is_admin_email,
@@ -36,9 +35,14 @@ class TestDatabase(unittest.TestCase):
     def test_get_all_clubs(self, mock_db):
         mock_club = Mock()
         mock_club.to_dict.return_value = {"name": "Test Club"}
-        mock_db.collection.return_value.get.return_value = [mock_club]
+        mock_db.collection.return_value.order_by.return_value.get.return_value = [
+            mock_club
+        ]
 
         result = get_all_clubs()
+
+        mock_db.collection.assert_called_with("running_clubs")
+        mock_db.collection.return_value.order_by.assert_called_with("name")
         self.assertEqual(result, ["Test Club"])
 
     @patch("database.db")
@@ -114,19 +118,6 @@ class TestDatabase(unittest.TestCase):
         mock_db.collection.assert_called_with("participants")
         mock_db.collection.return_value.document.assert_called_with("test_id")
         self.assertEqual(result, mock_doc)
-
-    @patch("database.db")
-    def test_get_clubs_ordered(self, mock_db):
-        mock_clubs = [Mock(), Mock()]
-        mock_db.collection.return_value.order_by.return_value.get.return_value = (
-            mock_clubs
-        )
-
-        result = get_clubs_ordered()
-
-        mock_db.collection.assert_called_with("running_clubs")
-        mock_db.collection.return_value.order_by.assert_called_with("name")
-        self.assertEqual(result, mock_clubs)
 
     @patch("database.db")
     def test_add_club(self, mock_db):

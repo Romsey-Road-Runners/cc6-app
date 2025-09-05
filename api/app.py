@@ -153,7 +153,7 @@ def participants():
 @login_required
 def clubs():
     """View all running clubs"""
-    clubs = database.get_clubs_ordered()
+    clubs = database.get_all_clubs()
     return render_template("clubs.html", clubs=clubs, user=session.get("user"))
 
 

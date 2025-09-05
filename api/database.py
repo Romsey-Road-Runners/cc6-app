@@ -58,8 +58,8 @@ def validate_barcode(barcode):
 
 
 def get_all_clubs():
-    """Get all running clubs"""
-    clubs = db.collection("running_clubs").get()
+    """Get all running clubs ordered alphabetically"""
+    clubs = db.collection("running_clubs").order_by("name").get()
     return [club.to_dict()["name"] for club in clubs]
 
 
@@ -115,11 +115,6 @@ def get_participants():
 def get_participant(participant_id):
     """Get single participant"""
     return db.collection("participants").document(participant_id).get()
-
-
-def get_clubs_ordered():
-    """Get all clubs ordered by name"""
-    return db.collection("running_clubs").order_by("name").get()
 
 
 def add_club(club_name):
