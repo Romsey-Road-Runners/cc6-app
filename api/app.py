@@ -70,14 +70,16 @@ RUNNING_CLUBS = [
     "Winchester Running Club",
 ]
 
+
 def init_running_clubs():
     """Initialize running clubs in database if not present"""
     clubs_ref = db.collection("running_clubs")
     existing_clubs = clubs_ref.get()
-    
+
     if not existing_clubs:
         for club_name in RUNNING_CLUBS:
             clubs_ref.add({"name": club_name})
+
 
 def get_club_id_by_name(club_name):
     """Get club document ID by name"""
@@ -206,6 +208,40 @@ def participants():
     return render_template(
         "participants.html", participants=participants, user=session.get("user")
     )
+
+
+@app.route("/clubs")
+@login_required
+def clubs():
+    """View all running clubs"""
+    clubs = db.collection("running_clubs").order_by("name").get()
+    return render_template("clubs.html", clubs=clubs, user=session.get("user"))
+
+
+@app.route("/add_club", methods=["POST"])
+@login_required
+def add_club():
+    """Add a new running club"""
+    club_name = request.form.get("club_name", "").strip()
+
+    if not club_name:
+        flash("Club name is required")
+        return redirect(url_for("clubs"))
+
+    # Check if club already exists
+    existing = db.collection("running_clubs").where("name", "==", club_name).get()
+    if existing:
+        flash("Club already exists")
+        return redirect(url_for("clubs"))
+
+    # Add new club
+    try:
+        db.collection("running_clubs").add({"name": club_name})
+        flash("Club added successfully!")
+    except Exception as e:
+        flash("Failed to add club. Please try again.")
+
+    return redirect(url_for("clubs"))
 
 
 if __name__ == "__main__":
