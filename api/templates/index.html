@@ -53,10 +53,16 @@
         
         <div class="form-group">
             <label>Gender:</label>
-            <input type="radio" id="male" name="gender" value="Male" required>
-            <label for="male" style="display: inline; margin-left: 5px; margin-right: 15px; font-weight: normal;">Male</label>
-            <input type="radio" id="female" name="gender" value="Female" required>
-            <label for="female" style="display: inline; margin-left: 5px; font-weight: normal;">Female</label>
+            <div style="display: flex; gap: 20px; margin-top: 5px;">
+                <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
+                    <input type="radio" name="gender" value="Male" required style="margin-right: 8px; width: auto;">
+                    Male
+                </label>
+                <label style="display: flex; align-items: center; font-weight: normal; cursor: pointer;">
+                    <input type="radio" name="gender" value="Female" required style="margin-right: 8px; width: auto;">
+                    Female
+                </label>
+            </div>
         </div>
         
         <div class="form-group">
