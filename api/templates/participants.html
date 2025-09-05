@@ -14,9 +14,10 @@
 </head>
 <body>
     <div class="nav">
-        <a href="/participants">Participants</a>
-        <a href="/clubs">Clubs</a>
-        <a href="/logout">Logout</a>
+        <a href="/">Register</a>
+        <a href="{{ url_for('participants') }}">Participants</a>
+        <a href="{{ url_for('clubs') }}">Clubs</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
     </div>
     
     <h1>Registered Participants</h1>

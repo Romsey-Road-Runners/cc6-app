@@ -9,87 +9,15 @@ from flask import (
     session,
 )
 from google.cloud import firestore
-from authlib.integrations.flask_client import OAuth
-import re
 import os
-from functools import wraps
+from auth import init_oauth, login_required
+from database import db, init_running_clubs, get_club_id_by_name, validate_barcode
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
 
-# Initialize Firestore
-db = firestore.Client()
-
 # Initialize OAuth
-oauth = OAuth(app)
-google = oauth.register(
-    name="google",
-    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-    authorize_url="https://accounts.google.com/o/oauth2/auth",
-    access_token_url="https://oauth2.googleapis.com/token",
-    userinfo_endpoint="https://openidconnect.googleapis.com/v1/userinfo",
-    jwks_uri="https://www.googleapis.com/oauth2/v3/certs",
-    client_kwargs={"scope": "openid email profile"},
-)
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-# Predefined running clubs
-RUNNING_CLUBS = [
-    "Chandler's Ford Swifts",
-    "Eastleigh Running Club",
-    "Halterworth Harriers",
-    "Hamwic Harriers",
-    "Hardley Runners",
-    "Hedge End Running Club",
-    "Itchen Spitfires Running Club",
-    "Lordshill Road Runners",
-    "Lymington Athletes",
-    "Lymington Triathlon Club",
-    "Netley Abbey Runners",
-    "New Forest Runners",
-    "Romsey Road Runners",
-    "Solent Running Sisters",
-    "Southampton Athletic Club",
-    "Southampton Triathlon Club",
-    "Stubbington Green Runners",
-    "Totton Running Club",
-    "Wessex Road Runners",
-    "Winchester & District AC",
-    "Winchester Fit Club",
-    "Winchester Running Club",
-]
-
-
-def init_running_clubs():
-    """Initialize running clubs in database if not present"""
-    clubs_ref = db.collection("running_clubs")
-    existing_clubs = clubs_ref.get()
-
-    if not existing_clubs:
-        for club_name in RUNNING_CLUBS:
-            clubs_ref.add({"name": club_name})
-
-
-def get_club_id_by_name(club_name):
-    """Get club document ID by name"""
-    clubs = db.collection("running_clubs").where("name", "==", club_name).get()
-    return clubs[0].id if clubs else None
-
-
-def validate_barcode(barcode):
-    """Validate Parkrun barcode format (A followed by 6-7 digits)"""
-    return re.match(r"^A\d{6,7}$", barcode.upper()) is not None
+google = init_oauth(app)
 
 
 @app.route("/")
