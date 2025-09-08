@@ -202,3 +202,12 @@ def get_all_races():
 def add_race(name, date, season):
     """Add new race"""
     return db.collection("races").add({"name": name, "date": date, "season": season})
+
+
+def add_race_results(results):
+    """Add race results in batch"""
+    batch = db.batch()
+    for result in results:
+        doc_ref = db.collection("race_results").document()
+        batch.set(doc_ref, result)
+    batch.commit()

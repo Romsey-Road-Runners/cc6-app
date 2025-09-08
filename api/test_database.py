@@ -5,6 +5,7 @@ from database import (
     add_admin_email,
     add_club,
     add_race,
+    add_race_results,
     add_season,
     barcode_exists,
     club_exists,
@@ -258,6 +259,22 @@ class TestDatabase(unittest.TestCase):
         mock_db.collection.return_value.add.assert_called_with(
             {"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"}
         )
+
+    @patch("database.db")
+    def test_add_race_results(self, mock_db):
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        results = [
+            {"race_name": "Test Race", "barcode": "A123456", "position": "P0001"},
+            {"race_name": "Test Race", "barcode": "A123457", "position": "P0002"},
+        ]
+
+        add_race_results(results)
+
+        mock_db.batch.assert_called_once()
+        self.assertEqual(mock_batch.set.call_count, 2)
+        mock_batch.commit.assert_called_once()
 
 
 if __name__ == "__main__":

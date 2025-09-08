@@ -329,6 +329,72 @@ def add_race():
     return redirect(url_for("races"))
 
 
+@app.route("/upload_results")
+@login_required
+def upload_results():
+    """Show upload results form"""
+    races = database.get_all_races()
+    return render_template("upload_results.html", races=races, user=session.get("user"))
+
+
+@app.route("/upload_results", methods=["POST"])
+@login_required
+def process_upload_results():
+    """Process uploaded CSV results"""
+    race_name = request.form.get("race_name", "")
+
+    if not race_name:
+        flash("Race name is required")
+        return redirect(url_for("upload_results"))
+
+    if "file" not in request.files:
+        flash("No file selected")
+        return redirect(url_for("upload_results"))
+
+    file = request.files["file"]
+    if file.filename == "":
+        flash("No file selected")
+        return redirect(url_for("upload_results"))
+
+    try:
+        import csv
+        import io
+
+        content = file.read().decode("utf-8")
+        csv_reader = csv.DictReader(io.StringIO(content))
+
+        results = []
+        seen_barcodes = set()
+        duplicates = []
+
+        for row in csv_reader:
+            barcode = row.get("ID", "").strip()
+            position = row.get("Pos", "").strip()
+
+            if barcode in seen_barcodes:
+                duplicates.append(barcode)
+                continue
+
+            seen_barcodes.add(barcode)
+
+            results.append(
+                {"race_name": race_name, "barcode": barcode, "position": position}
+            )
+
+        database.add_race_results(results)
+
+        message = f"Uploaded {len(results)} results successfully!"
+        if duplicates:
+            message += f" Warning: {len(duplicates)} duplicate barcodes were skipped."
+
+        flash(message)
+
+    except Exception:
+        flash("Failed to process CSV file. Please check the format.")
+
+    return redirect(url_for("upload_results"))
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
