@@ -385,7 +385,7 @@ def process_upload_results():
 
         message = f"Uploaded {len(results)} results successfully!"
         if duplicates:
-            message += f" Warning: {len(duplicates)} duplicate barcodes were skipped."
+            message += f" Warning: {len(duplicates)} duplicate barcodes were skipped: {', '.join(duplicates)}."
 
         flash(message)
 
