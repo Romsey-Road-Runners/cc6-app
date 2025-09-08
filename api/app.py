@@ -255,6 +255,37 @@ def remove_admin():
     return redirect(url_for("admins"))
 
 
+@app.route("/seasons")
+@login_required
+def seasons():
+    """View all seasons"""
+    seasons = database.get_all_seasons()
+    return render_template("seasons.html", seasons=seasons, user=session.get("user"))
+
+
+@app.route("/add_season", methods=["POST"])
+@login_required
+def add_season():
+    """Add a new season"""
+    season_name = request.form.get("season_name", "").strip()
+
+    if not season_name:
+        flash("Season name is required")
+        return redirect(url_for("seasons"))
+
+    if database.season_exists(season_name):
+        flash("Season already exists")
+        return redirect(url_for("seasons"))
+
+    try:
+        database.add_season(season_name)
+        flash("Season added successfully!")
+    except Exception:
+        flash("Failed to add season.")
+
+    return redirect(url_for("seasons"))
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)

@@ -156,8 +156,33 @@ def add_admin_email(email):
 
 def remove_admin_email(email):
     """Remove admin email"""
-    admins = db.collection("admin_emails").where("email", "==", email).get()
+    admins = (
+        db.collection("admin_emails")
+        .where(filter=firestore.FieldFilter("email", "==", email))
+        .get()
+    )
     if admins:
         db.collection("admin_emails").document(admins[0].id).delete()
         return True
     return False
+
+
+def get_all_seasons():
+    """Get all seasons ordered by name"""
+    seasons = db.collection("seasons").order_by("name").get()
+    return [season.to_dict()["name"] for season in seasons]
+
+
+def season_exists(season_name):
+    """Check if season exists"""
+    existing = (
+        db.collection("seasons")
+        .where(filter=firestore.FieldFilter("name", "==", season_name))
+        .get()
+    )
+    return len(existing) > 0
+
+
+def add_season(season_name):
+    """Add new season"""
+    return db.collection("seasons").add({"name": season_name})

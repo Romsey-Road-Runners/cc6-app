@@ -4,15 +4,18 @@ from unittest.mock import Mock, patch
 from database import (
     add_admin_email,
     add_club,
+    add_season,
     barcode_exists,
     club_exists,
     create_participant,
     get_admin_emails,
     get_all_clubs,
+    get_all_seasons,
     get_participant,
     get_participants,
     is_admin_email,
     remove_admin_email,
+    season_exists,
     soft_delete_participant,
     update_participant,
     validate_barcode,
@@ -187,6 +190,42 @@ class TestDatabase(unittest.TestCase):
         result = remove_admin_email("nonexistent@test.com")
 
         self.assertFalse(result)
+
+    @patch("database.db")
+    def test_get_all_seasons(self, mock_db):
+        mock_season = Mock()
+        mock_season.to_dict.return_value = {"name": "2024 Season"}
+        mock_db.collection.return_value.order_by.return_value.get.return_value = [
+            mock_season
+        ]
+
+        result = get_all_seasons()
+
+        mock_db.collection.assert_called_with("seasons")
+        mock_db.collection.return_value.order_by.assert_called_with("name")
+        self.assertEqual(result, ["2024 Season"])
+
+    @patch("database.db")
+    def test_season_exists_true(self, mock_db):
+        mock_db.collection.return_value.where.return_value.get.return_value = [Mock()]
+
+        result = season_exists("2024 Season")
+        self.assertTrue(result)
+
+    @patch("database.db")
+    def test_season_exists_false(self, mock_db):
+        mock_db.collection.return_value.where.return_value.get.return_value = []
+
+        result = season_exists("2024 Season")
+        self.assertFalse(result)
+
+    @patch("database.db")
+    def test_add_season(self, mock_db):
+        season_name = "2024 Season"
+        add_season(season_name)
+
+        mock_db.collection.assert_called_with("seasons")
+        mock_db.collection.return_value.add.assert_called_with({"name": season_name})
 
 
 if __name__ == "__main__":

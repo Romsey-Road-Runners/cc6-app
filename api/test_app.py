@@ -158,6 +158,28 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/add_admin", data={"email": "new@example.com"})
         self.assertEqual(response.status_code, 302)
 
+    def test_seasons_requires_auth(self):
+        response = self.client.get("/seasons")
+        self.assertEqual(response.status_code, 302)
+
+    def test_add_season_requires_auth(self):
+        response = self.client.post("/add_season", data={"season_name": "2024 Season"})
+        self.assertEqual(response.status_code, 302)
+
+    def test_seasons_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/seasons")
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_season_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/add_season", data={"season_name": "2024 Season"})
+        self.assertEqual(response.status_code, 302)
+
 
 if __name__ == "__main__":
     unittest.main()

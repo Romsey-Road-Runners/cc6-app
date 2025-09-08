@@ -9,13 +9,7 @@
 <body>
     <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
     
-    <div class="nav">
-        <a href="/">Register</a>
-        <a href="{{ url_for('participants') }}">Participants</a>
-        <a href="{{ url_for('clubs') }}">Clubs</a>
-        <a href="{{ url_for('admins') }}">Admins</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </div>
+    {% include 'nav.html' %}
 
     <h1>Running Clubs</h1>
     
