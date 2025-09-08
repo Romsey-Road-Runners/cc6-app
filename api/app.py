@@ -371,6 +371,9 @@ def process_upload_results():
             barcode = row.get("ID", "").strip()
             position = row.get("Pos", "").strip()
 
+            if not position:
+                continue
+
             if barcode in seen_barcodes:
                 duplicates.append(barcode)
                 continue
@@ -395,15 +398,26 @@ def process_upload_results():
     return redirect(url_for("upload_results"))
 
 
-@app.route("/race_results/<race_name>")
+@app.route("/race_results/<season>/<race_name>")
 @login_required
-def race_results(race_name):
+def race_results(season, race_name):
     """View race results"""
     results = database.get_race_results(race_name)
+
+    # Get race date
+    race_date = None
+    races = database.get_all_races()
+    for race in races:
+        if race["name"] == race_name and race["season"] == season:
+            race_date = race["date"]
+            break
+
     return render_template(
         "race_results.html",
         results=results,
         race_name=race_name,
+        season=season,
+        race_date=race_date,
         user=session.get("user"),
     )
 
