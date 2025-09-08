@@ -395,6 +395,19 @@ def process_upload_results():
     return redirect(url_for("upload_results"))
 
 
+@app.route("/race_results/<race_name>")
+@login_required
+def race_results(race_name):
+    """View race results"""
+    results = database.get_race_results(race_name)
+    return render_template(
+        "race_results.html",
+        results=results,
+        race_name=race_name,
+        user=session.get("user"),
+    )
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)

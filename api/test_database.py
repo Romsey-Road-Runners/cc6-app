@@ -16,6 +16,7 @@ from database import (
     get_all_seasons,
     get_participant,
     get_participants,
+    get_race_results,
     is_admin_email,
     remove_admin_email,
     season_exists,
@@ -275,6 +276,40 @@ class TestDatabase(unittest.TestCase):
         mock_db.batch.assert_called_once()
         self.assertEqual(mock_batch.set.call_count, 2)
         mock_batch.commit.assert_called_once()
+
+    @patch("database.db")
+    def test_get_race_results(self, mock_db):
+        # Mock race results
+        mock_result = Mock()
+        mock_result.to_dict.return_value = {
+            "race_name": "Test Race",
+            "barcode": "A123456",
+            "position": "P0001",
+        }
+        mock_result.id = "result_id"
+
+        # Mock participants
+        mock_participant = Mock()
+        mock_participant.to_dict.return_value = {
+            "barcode": "A123456",
+            "first_name": "John",
+            "last_name": "Doe",
+            "club": "Test Club",
+            "date_of_birth": "1990-01-01",
+            "deleted": False,
+        }
+
+        mock_db.collection.return_value.where.return_value.get.return_value = [
+            mock_result
+        ]
+        mock_db.collection.return_value.get.return_value = [mock_participant]
+
+        result = get_race_results("Test Race")
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["barcode"], "A123456")
+        self.assertEqual(result[0]["participant_name"], "John Doe")
+        self.assertEqual(result[0]["club"], "Test Club")
 
 
 if __name__ == "__main__":

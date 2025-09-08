@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Results - {{ race_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { max-width: 1000px; }
+        th, td { border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Race Results - {{ race_name }}</h1>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Barcode</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Club</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.position }}</td>
+                <td>{{ result.barcode }}</td>
+                <td>{{ result.participant_name or '-' }}</td>
+                <td>{{ result.age or '-' }}</td>
+                <td>{{ result.club or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No results found for this race.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

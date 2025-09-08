@@ -211,3 +211,64 @@ def add_race_results(results):
         doc_ref = db.collection("race_results").document()
         batch.set(doc_ref, result)
     batch.commit()
+
+
+def get_race_results(race_name):
+    """Get race results with participant details"""
+    results = (
+        db.collection("race_results")
+        .where(filter=firestore.FieldFilter("race_name", "==", race_name))
+        .get()
+    )
+
+    # Get all participants for lookup
+    participants = {}
+    for p in db.collection("participants").get():
+        if not p.to_dict().get("deleted", False):
+            participants[p.to_dict().get("barcode")] = p.to_dict()
+
+    result_list = []
+    for result in results:
+        result_data = result.to_dict()
+        result_data["id"] = result.id
+
+        # Add participant details if available
+        barcode = result_data.get("barcode")
+        if barcode in participants:
+            p = participants[barcode]
+            result_data["participant_name"] = (
+                f"{p.get('first_name', '')} {p.get('last_name', '')}".strip()
+            )
+            result_data["club"] = p.get("club", "")
+
+            # Calculate age from date_of_birth if available
+            dob = p.get("date_of_birth")
+            if dob:
+                from datetime import datetime
+
+                try:
+                    birth_date = datetime.strptime(dob, "%Y-%m-%d")
+                    today = datetime.now()
+                    age = (
+                        today.year
+                        - birth_date.year
+                        - (
+                            (today.month, today.day)
+                            < (birth_date.month, birth_date.day)
+                        )
+                    )
+                    result_data["age"] = age
+                except ValueError:
+                    result_data["age"] = ""
+            else:
+                result_data["age"] = ""
+        else:
+            result_data["participant_name"] = ""
+            result_data["club"] = ""
+            result_data["age"] = ""
+
+        result_list.append(result_data)
+
+    # Sort by position
+    result_list.sort(key=lambda x: x.get("position", "Z999"))
+    return result_list

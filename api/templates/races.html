@@ -50,6 +50,7 @@
                 <th>Race Name</th>
                 <th>Date</th>
                 <th>Season</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -58,6 +59,9 @@
                 <td>{{ race.name }}</td>
                 <td>{{ race.date }}</td>
                 <td>{{ race.season }}</td>
+                <td>
+                    <a href="{{ url_for('race_results', race_name=race.name) }}" style="color: #007bff;">View Results</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

@@ -228,6 +228,17 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/upload_results")
         self.assertEqual(response.status_code, 200)
 
+    def test_race_results_requires_auth(self):
+        response = self.client.get("/race_results/Test Race")
+        self.assertEqual(response.status_code, 302)
+
+    def test_race_results_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/race_results/Test Race")
+        self.assertEqual(response.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()
