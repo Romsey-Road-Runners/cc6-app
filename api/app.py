@@ -402,6 +402,10 @@ def process_upload_results():
 @login_required
 def race_results(season, race_name):
     """View race results"""
+    from urllib.parse import unquote
+    season = unquote(season)
+    race_name = unquote(race_name)
+    
     results = database.get_race_results(race_name)
 
     # Get race date

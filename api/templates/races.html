@@ -60,7 +60,7 @@
                 <td>{{ race.date }}</td>
                 <td>{{ race.season }}</td>
                 <td>
-                    <a href="{{ url_for('race_results', season=race.season, race_name=race.name) }}" style="color: #007bff;">View Results</a>
+                    <a href="{{ url_for('race_results', season=race.season|urlencode, race_name=race.name|urlencode) }}" style="color: #007bff;">View Results</a>
                 </td>
             </tr>
             {% endfor %}
