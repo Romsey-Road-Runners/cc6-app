@@ -398,30 +398,26 @@ def process_upload_results():
     return redirect(url_for("upload_results"))
 
 
-@app.route("/race_results/<season>/<race_name>")
+@app.route("/race_results/<race_id>")
 @login_required
-def race_results(season, race_name):
+def race_results(race_id):
     """View race results"""
-    from urllib.parse import unquote
-    season = unquote(season)
-    race_name = unquote(race_name)
-    
-    results = database.get_race_results(race_name)
-
-    # Get race date
-    race_date = None
+    # Get race details
     races = database.get_all_races()
-    for race in races:
-        if race["name"] == race_name and race["season"] == season:
-            race_date = race["date"]
-            break
+    race = next((r for r in races if r["id"] == race_id), None)
+
+    if not race:
+        flash("Race not found")
+        return redirect(url_for("races"))
+
+    results = database.get_race_results(race["name"])
 
     return render_template(
         "race_results.html",
         results=results,
-        race_name=race_name,
-        season=season,
-        race_date=race_date,
+        race_name=race["name"],
+        season=race["season"],
+        race_date=race["date"],
         user=session.get("user"),
     )
 
