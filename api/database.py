@@ -240,6 +240,7 @@ def get_race_results(race_name):
                 f"{p.get('first_name', '')} {p.get('last_name', '')}".strip()
             )
             result_data["club"] = p.get("club", "")
+            result_data["gender"] = p.get("gender", "")
 
             # Calculate age from date_of_birth if available
             dob = p.get("date_of_birth")
@@ -266,6 +267,7 @@ def get_race_results(race_name):
             result_data["participant_name"] = ""
             result_data["club"] = ""
             result_data["age"] = ""
+            result_data["gender"] = ""
 
         result_list.append(result_data)
 

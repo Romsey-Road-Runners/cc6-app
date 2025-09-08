@@ -23,6 +23,7 @@
                 <th>Position</th>
                 <th>Barcode</th>
                 <th>Name</th>
+                <th>Gender</th>
                 <th>Age</th>
                 <th>Club</th>
             </tr>
@@ -33,12 +34,13 @@
                 <td>{{ result.position }}</td>
                 <td>{{ result.barcode }}</td>
                 <td>{{ result.participant_name or '-' }}</td>
+                <td>{{ result.gender or '-' }}</td>
                 <td>{{ result.age or '-' }}</td>
                 <td>{{ result.club or '-' }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5">No results found for this race.</td>
+                <td colspan="6">No results found for this race.</td>
             </tr>
             {% endfor %}
         </tbody>
