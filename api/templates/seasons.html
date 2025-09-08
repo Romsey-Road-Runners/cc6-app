@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seasons</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Seasons</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_season') }}">
+        <div class="form-group">
+            <label for="season_name">Season Name:</label>
+            <input type="text" id="season_name" name="season_name" placeholder="Enter season name" required>
+        </div>
+        <button type="submit">Add Season</button>
+    </form>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Season Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for season in seasons %}
+            <tr>
+                <td>{{ season }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
