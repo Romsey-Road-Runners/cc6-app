@@ -221,6 +221,16 @@ def get_race_results(race_name):
         .get()
     )
 
+    # Get race date
+    race_date = None
+    races = (
+        db.collection("races")
+        .where(filter=firestore.FieldFilter("name", "==", race_name))
+        .get()
+    )
+    if races:
+        race_date = races[0].to_dict().get("date")
+
     # Get all participants for lookup
     participants = {}
     for p in db.collection("participants").get():
@@ -242,23 +252,33 @@ def get_race_results(race_name):
             result_data["club"] = p.get("club", "")
             result_data["gender"] = p.get("gender", "")
 
-            # Calculate age from date_of_birth if available
+            # Calculate age category from date_of_birth and race date
             dob = p.get("date_of_birth")
-            if dob:
+            if dob and race_date:
                 from datetime import datetime
 
                 try:
                     birth_date = datetime.strptime(dob, "%Y-%m-%d")
-                    today = datetime.now()
+                    race_date_obj = datetime.strptime(race_date, "%Y-%m-%d")
                     age = (
-                        today.year
+                        race_date_obj.year
                         - birth_date.year
                         - (
-                            (today.month, today.day)
+                            (race_date_obj.month, race_date_obj.day)
                             < (birth_date.month, birth_date.day)
                         )
                     )
-                    result_data["age"] = age
+
+                    if age < 40:
+                        result_data["age"] = "Senior"
+                    elif age < 50:
+                        result_data["age"] = "V40"
+                    elif age < 60:
+                        result_data["age"] = "V50"
+                    elif age < 70:
+                        result_data["age"] = "V60"
+                    else:
+                        result_data["age"] = "V70"
                 except ValueError:
                     result_data["age"] = ""
             else:

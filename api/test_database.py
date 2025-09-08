@@ -288,6 +288,10 @@ class TestDatabase(unittest.TestCase):
         }
         mock_result.id = "result_id"
 
+        # Mock race data
+        mock_race = Mock()
+        mock_race.to_dict.return_value = {"name": "Test Race", "date": "2024-01-01"}
+
         # Mock participants
         mock_participant = Mock()
         mock_participant.to_dict.return_value = {
@@ -296,13 +300,22 @@ class TestDatabase(unittest.TestCase):
             "last_name": "Doe",
             "club": "Test Club",
             "date_of_birth": "1990-01-01",
+            "gender": "Male",
             "deleted": False,
         }
 
-        mock_db.collection.return_value.where.return_value.get.return_value = [
-            mock_result
-        ]
-        mock_db.collection.return_value.get.return_value = [mock_participant]
+        # Setup mock calls
+        def mock_collection_side_effect(collection_name):
+            mock_collection = Mock()
+            if collection_name == "race_results":
+                mock_collection.where.return_value.get.return_value = [mock_result]
+            elif collection_name == "races":
+                mock_collection.where.return_value.get.return_value = [mock_race]
+            elif collection_name == "participants":
+                mock_collection.get.return_value = [mock_participant]
+            return mock_collection
+
+        mock_db.collection.side_effect = mock_collection_side_effect
 
         result = get_race_results("Test Race")
 
@@ -310,6 +323,8 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(result[0]["barcode"], "A123456")
         self.assertEqual(result[0]["participant_name"], "John Doe")
         self.assertEqual(result[0]["club"], "Test Club")
+        self.assertEqual(result[0]["gender"], "Male")
+        self.assertEqual(result[0]["age"], "Senior")
 
 
 if __name__ == "__main__":
