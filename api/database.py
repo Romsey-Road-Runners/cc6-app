@@ -294,3 +294,17 @@ def get_race_results(race_name):
     # Sort by position
     result_list.sort(key=lambda x: x.get("position", "Z999"))
     return result_list
+
+
+def delete_race_result(result_id):
+    """Delete a race result"""
+    return db.collection("race_results").document(result_id).delete()
+
+
+def update_race_result_position(result_id, new_position):
+    """Update race result position"""
+    return (
+        db.collection("race_results")
+        .document(result_id)
+        .update({"position": new_position})
+    )

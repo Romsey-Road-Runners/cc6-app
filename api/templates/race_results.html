@@ -8,6 +8,10 @@
     <style>
         body { max-width: 1000px; }
         th, td { border-bottom: 1px solid #ddd; }
+        .dragging { opacity: 0.5; }
+        .delete-btn { color: red; cursor: pointer; }
+        tbody tr { cursor: move; }
+        .missing-position, .duplicate-position { background-color: #ffcccc; }
     </style>
 </head>
 <body>
@@ -28,24 +32,154 @@
                 <th>Gender</th>
                 <th>Category</th>
                 <th>Club</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for result in results %}
-            <tr>
+            <tr data-id="{{ result.id }}">
                 <td>{{ result.position }}</td>
                 <td>{{ result.barcode }}</td>
                 <td>{{ result.participant_name or '-' }}</td>
                 <td>{{ result.gender or '-' }}</td>
                 <td>{{ result.age or '-' }}</td>
                 <td>{{ result.club or '-' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('delete_race_result', result_id=result.id) }}" style="display: inline;">
+                        <button type="submit" class="delete-btn" onclick="return confirm('Delete this result?')">×</button>
+                    </form>
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="6">No results found for this race.</td>
+                <td colspan="7">No results found for this race.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <script>
+        let draggedElement = null;
+        
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.draggable = true;
+            
+            row.addEventListener('dragstart', function(e) {
+                draggedElement = this;
+                this.classList.add('dragging');
+            });
+            
+            row.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                draggedElement = null;
+            });
+            
+            row.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+            
+            row.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (draggedElement && draggedElement !== this) {
+                    const tbody = this.parentNode;
+                    const draggedIndex = Array.from(tbody.children).indexOf(draggedElement);
+                    const targetIndex = Array.from(tbody.children).indexOf(this);
+                    
+                    if (draggedIndex < targetIndex) {
+                        tbody.insertBefore(draggedElement, this.nextSibling);
+                    } else {
+                        tbody.insertBefore(draggedElement, this);
+                    }
+                    
+                    updatePositions();
+                }
+            });
+        });
+        
+        function updatePositions() {
+            const rows = document.querySelectorAll('tbody tr');
+            const updates = [];
+            
+            rows.forEach((row, index) => {
+                const id = row.dataset.id;
+                const position = index + 1;
+                row.children[0].textContent = `P${position.toString().padStart(4, '0')}`;
+                updates.push({ id: id, position: position });
+            });
+            
+            fetch('/reorder_race_results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            
+            highlightIssues();
+        }
+        
+        function highlightIssues() {
+            const rows = document.querySelectorAll('tbody tr[data-id]');
+            const positions = [];
+            const positionCounts = {};
+            
+            // Collect positions and count duplicates
+            rows.forEach(row => {
+                const positionText = row.children[0].textContent;
+                const positionNum = parseInt(positionText.replace('P', ''));
+                positions.push(positionNum);
+                positionCounts[positionNum] = (positionCounts[positionNum] || 0) + 1;
+            });
+            
+            // Clear existing highlights
+            rows.forEach(row => {
+                row.classList.remove('missing-position', 'duplicate-position');
+            });
+            
+            // Highlight duplicates
+            rows.forEach(row => {
+                const positionText = row.children[0].textContent;
+                const positionNum = parseInt(positionText.replace('P', ''));
+                if (positionCounts[positionNum] > 1) {
+                    row.classList.add('duplicate-position');
+                }
+            });
+            
+            // Add missing position rows
+            const tbody = document.querySelector('tbody');
+            const existingMissing = tbody.querySelectorAll('.missing-position');
+            existingMissing.forEach(row => row.remove());
+            
+            if (positions.length > 0) {
+                const maxPosition = Math.max(...positions);
+                for (let i = 1; i <= maxPosition; i++) {
+                    if (!positions.includes(i)) {
+                        const missingRow = document.createElement('tr');
+                        missingRow.className = 'missing-position';
+                        missingRow.innerHTML = `
+                            <td>P${i.toString().padStart(4, '0')}</td>
+                            <td colspan="6">Missing position</td>
+                        `;
+                        
+                        // Insert in correct position
+                        let inserted = false;
+                        for (let row of tbody.children) {
+                            if (row.dataset.id) {
+                                const rowPos = parseInt(row.children[0].textContent.replace('P', ''));
+                                if (i < rowPos) {
+                                    tbody.insertBefore(missingRow, row);
+                                    inserted = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!inserted) {
+                            tbody.appendChild(missingRow);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Initial highlight check
+        document.addEventListener('DOMContentLoaded', highlightIssues);
+    </script>
 </body>
 </html>

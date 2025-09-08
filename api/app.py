@@ -422,6 +422,38 @@ def race_results(season, race_name):
     )
 
 
+@app.route("/delete_race_result/<result_id>", methods=["POST"])
+@login_required
+def delete_race_result(result_id):
+    """Delete a race result"""
+    try:
+        database.delete_race_result(result_id)
+        flash("Race result deleted successfully!")
+    except Exception:
+        flash("Failed to delete race result.")
+
+    return redirect(request.referrer or url_for("races"))
+
+
+@app.route("/reorder_race_results", methods=["POST"])
+@login_required
+def reorder_race_results():
+    """Reorder race results"""
+    try:
+        import json
+
+        data = json.loads(request.data)
+
+        for item in data:
+            result_id = item["id"]
+            new_position = f"P{item['position']:04d}"
+            database.update_race_result_position(result_id, new_position)
+
+        return jsonify({"success": True})
+    except Exception:
+        return jsonify({"success": False}), 400
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
