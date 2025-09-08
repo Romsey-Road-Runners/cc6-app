@@ -180,6 +180,39 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/add_season", data={"season_name": "2024 Season"})
         self.assertEqual(response.status_code, 302)
 
+    def test_races_requires_auth(self):
+        response = self.client.get("/races")
+        self.assertEqual(response.status_code, 302)
+
+    def test_add_race_requires_auth(self):
+        response = self.client.post(
+            "/add_race",
+            data={"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"},
+        )
+        self.assertEqual(response.status_code, 302)
+
+    def test_races_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/races")
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_race_with_auth(self):
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_race",
+            data={"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"},
+        )
+        self.assertEqual(response.status_code, 302)
+
+    def test_api_seasons(self):
+        response = self.client.get("/api/seasons")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json, list)
+
 
 if __name__ == "__main__":
     unittest.main()

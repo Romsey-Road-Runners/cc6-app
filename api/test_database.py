@@ -4,12 +4,14 @@ from unittest.mock import Mock, patch
 from database import (
     add_admin_email,
     add_club,
+    add_race,
     add_season,
     barcode_exists,
     club_exists,
     create_participant,
     get_admin_emails,
     get_all_clubs,
+    get_all_races,
     get_all_seasons,
     get_participant,
     get_participants,
@@ -226,6 +228,36 @@ class TestDatabase(unittest.TestCase):
 
         mock_db.collection.assert_called_with("seasons")
         mock_db.collection.return_value.add.assert_called_with({"name": season_name})
+
+    @patch("database.db")
+    def test_get_all_races(self, mock_db):
+        mock_race = Mock()
+        mock_race.to_dict.return_value = {
+            "name": "Test Race",
+            "date": "2024-01-01",
+            "season": "2024 Season",
+        }
+        mock_race.id = "race_id"
+        mock_db.collection.return_value.order_by.return_value.get.return_value = [
+            mock_race
+        ]
+
+        result = get_all_races()
+
+        mock_db.collection.assert_called_with("races")
+        mock_db.collection.return_value.order_by.assert_called_with("date")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "race_id")
+        self.assertEqual(result[0]["name"], "Test Race")
+
+    @patch("database.db")
+    def test_add_race(self, mock_db):
+        add_race("Test Race", "2024-01-01", "2024 Season")
+
+        mock_db.collection.assert_called_with("races")
+        mock_db.collection.return_value.add.assert_called_with(
+            {"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"}
+        )
 
 
 if __name__ == "__main__":

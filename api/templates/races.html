@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Races</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Races</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_race') }}">
+        <div class="form-group">
+            <label for="name">Race Name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter race name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">Race Date:</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="season">Season:</label>
+            <select id="season" name="season" required>
+                <option value="">Select a season</option>
+            </select>
+        </div>
+        
+        <button type="submit">Add Race</button>
+    </form>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Race Name</th>
+                <th>Date</th>
+                <th>Season</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for race in races %}
+            <tr>
+                <td>{{ race.name }}</td>
+                <td>{{ race.date }}</td>
+                <td>{{ race.season }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <script>
+        // Fetch seasons from API and populate dropdown
+        fetch('/api/seasons')
+            .then(response => response.json())
+            .then(seasons => {
+                const select = document.getElementById('season');
+                select.innerHTML = '<option value="">Select a season</option>';
+                seasons.forEach(season => {
+                    const option = document.createElement('option');
+                    option.value = season;
+                    option.textContent = season;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading seasons:', error);
+                document.getElementById('season').innerHTML = '<option value="">Error loading seasons</option>';
+            });
+    </script>
+</body>
+</html>

@@ -41,6 +41,12 @@ def get_clubs():
     return jsonify(database.get_all_clubs())
 
 
+@app.route("/api/seasons")
+def get_seasons():
+    """API endpoint to get seasons"""
+    return jsonify(database.get_all_seasons())
+
+
 @app.route("/register", methods=["POST"])
 @app.route("/edit_participant/<participant_id>", methods=["POST"])
 def register(participant_id=None):
@@ -284,6 +290,43 @@ def add_season():
         flash("Failed to add season.")
 
     return redirect(url_for("seasons"))
+
+
+@app.route("/races")
+@login_required
+def races():
+    """View all races"""
+    races = database.get_all_races()
+    return render_template("races.html", races=races, user=session.get("user"))
+
+
+@app.route("/add_race", methods=["POST"])
+@login_required
+def add_race():
+    """Add a new race"""
+    name = request.form.get("name", "").strip()
+    date = request.form.get("date", "")
+    season = request.form.get("season", "")
+
+    if not name:
+        flash("Race name is required")
+        return redirect(url_for("races"))
+
+    if not date:
+        flash("Race date is required")
+        return redirect(url_for("races"))
+
+    if not season:
+        flash("Season is required")
+        return redirect(url_for("races"))
+
+    try:
+        database.add_race(name, date, season)
+        flash("Race added successfully!")
+    except Exception:
+        flash("Failed to add race.")
+
+    return redirect(url_for("races"))
 
 
 if __name__ == "__main__":

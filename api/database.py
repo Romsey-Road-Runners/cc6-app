@@ -186,3 +186,19 @@ def season_exists(season_name):
 def add_season(season_name):
     """Add new season"""
     return db.collection("seasons").add({"name": season_name})
+
+
+def get_all_races():
+    """Get all races ordered by date"""
+    races = db.collection("races").order_by("date").get()
+    result = []
+    for race in races:
+        race_data = race.to_dict()
+        race_data["id"] = race.id
+        result.append(race_data)
+    return result
+
+
+def add_race(name, date, season):
+    """Add new race"""
+    return db.collection("races").add({"name": name, "date": date, "season": season})
