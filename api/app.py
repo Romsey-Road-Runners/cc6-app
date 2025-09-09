@@ -47,6 +47,13 @@ def get_clubs():
     return jsonify(database.get_all_clubs())
 
 
+@app.route("/api/participants")
+@login_required
+def get_participants_api():
+    """API endpoint to get participants"""
+    return jsonify(database.get_participants())
+
+
 @app.route("/api/seasons")
 def get_seasons():
     """API endpoint to get seasons with IDs"""
@@ -385,75 +392,6 @@ def add_race():
     return redirect(url_for("races"))
 
 
-@app.route("/upload_results")
-@login_required
-def upload_results():
-    """Show upload results form"""
-    races = database.get_all_races()
-    return render_template("upload_results.html", races=races, user=session.get("user"))
-
-
-@app.route("/upload_results", methods=["POST"])
-@login_required
-def process_upload_results():
-    """Process uploaded CSV results"""
-    race_name = request.form.get("race_name", "")
-
-    if not race_name:
-        flash("Race name is required")
-        return redirect(url_for("upload_results"))
-
-    if "file" not in request.files:
-        flash("No file selected")
-        return redirect(url_for("upload_results"))
-
-    file = request.files["file"]
-    if file.filename == "":
-        flash("No file selected")
-        return redirect(url_for("upload_results"))
-
-    try:
-        import csv
-        import io
-
-        content = file.read().decode("utf-8")
-        csv_reader = csv.DictReader(io.StringIO(content))
-
-        results = []
-        seen_barcodes = set()
-        duplicates = []
-
-        for row in csv_reader:
-            barcode = row.get("ID", "").strip()
-            position = row.get("Pos", "").strip()
-
-            if not position:
-                continue
-
-            if barcode in seen_barcodes:
-                duplicates.append(barcode)
-                continue
-
-            seen_barcodes.add(barcode)
-
-            results.append(
-                {"race_name": race_name, "barcode": barcode, "position": position}
-            )
-
-        database.add_race_results(results)
-
-        message = f"Uploaded {len(results)} results successfully!"
-        if duplicates:
-            message += f" Warning: {len(duplicates)} duplicate barcodes were skipped: {', '.join(duplicates)}."
-
-        flash(message)
-
-    except Exception:
-        flash("Failed to process CSV file. Please check the format.")
-
-    return redirect(url_for("upload_results"))
-
-
 @app.route("/race_results/<race_id>")
 @login_required
 def race_results(race_id):
@@ -519,6 +457,91 @@ def delete_all_race_results(race_name):
         flash("All race results deleted successfully!")
     except Exception:
         flash("Failed to delete race results.")
+
+    return redirect(request.referrer or url_for("races"))
+
+
+@app.route("/process_upload_results", methods=["POST"])
+@login_required
+def process_upload_results():
+    """Process uploaded CSV results"""
+    race_name = request.form.get("race_name", "")
+
+    if not race_name:
+        flash("Race name is required")
+        return redirect(request.referrer or url_for("races"))
+
+    if "file" not in request.files:
+        flash("No file selected")
+        return redirect(request.referrer or url_for("races"))
+
+    file = request.files["file"]
+    if file.filename == "":
+        flash("No file selected")
+        return redirect(request.referrer or url_for("races"))
+
+    try:
+        import csv
+        import io
+
+        content = file.read().decode("utf-8")
+        csv_reader = csv.DictReader(io.StringIO(content))
+
+        results = []
+        seen_barcodes = set()
+        duplicates = []
+
+        for row in csv_reader:
+            barcode = row.get("ID", "").strip()
+            position = row.get("Pos", "").strip()
+
+            if not position:
+                continue
+
+            if barcode in seen_barcodes:
+                duplicates.append(barcode)
+                continue
+
+            seen_barcodes.add(barcode)
+
+            results.append(
+                {"race_name": race_name, "barcode": barcode, "position": position}
+            )
+
+        database.add_race_results(results)
+
+        message = f"Uploaded {len(results)} results successfully!"
+        if duplicates:
+            message += f" Warning: {len(duplicates)} duplicate barcodes were skipped: {', '.join(duplicates)}."
+
+        flash(message)
+
+    except Exception:
+        flash("Failed to process CSV file. Please check the format.")
+
+    return redirect(request.referrer or url_for("races"))
+
+
+@app.route("/add_manual_result", methods=["POST"])
+@login_required
+def add_manual_result():
+    """Add a manual race result"""
+    race_name = request.form.get("race_name", "")
+    barcode = request.form.get("barcode", "")
+    position_token = request.form.get("position_token", "")
+
+    if not race_name or not barcode or not position_token:
+        flash("All fields are required")
+        return redirect(request.referrer or url_for("races"))
+
+    try:
+        results = [
+            {"race_name": race_name, "barcode": barcode, "position": position_token}
+        ]
+        database.add_race_results(results)
+        flash("Manual result added successfully!")
+    except Exception:
+        flash("Failed to add manual result.")
 
     return redirect(request.referrer or url_for("races"))
 
