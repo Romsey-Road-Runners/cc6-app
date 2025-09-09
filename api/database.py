@@ -5,32 +5,6 @@ from google.cloud import firestore
 # Initialize Firestore
 db = firestore.Client()
 
-# Predefined running clubs
-RUNNING_CLUBS = [
-    "Chandler's Ford Swifts",
-    "Eastleigh Running Club",
-    "Halterworth Harriers",
-    "Hamwic Harriers",
-    "Hardley Runners",
-    "Hedge End Running Club",
-    "Itchen Spitfires Running Club",
-    "Lordshill Road Runners",
-    "Lymington Athletes",
-    "Lymington Triathlon Club",
-    "Netley Abbey Runners",
-    "New Forest Runners",
-    "Romsey Road Runners",
-    "Solent Running Sisters",
-    "Southampton Athletic Club",
-    "Southampton Triathlon Club",
-    "Stubbington Green Runners",
-    "Totton Running Club",
-    "Wessex Road Runners",
-    "Winchester & District AC",
-    "Winchester Fit Club",
-    "Winchester Running Club",
-]
-
 
 def init_running_clubs():
     """Initialize running clubs in database if not present"""
@@ -38,8 +12,8 @@ def init_running_clubs():
     existing_clubs = clubs_ref.get()
 
     if not existing_clubs:
-        for club_name in RUNNING_CLUBS:
-            clubs_ref.add({"name": club_name})
+        for club_data in RUNNING_CLUBS:
+            clubs_ref.add(club_data)
 
 
 def get_club_id_by_name(club_name):
@@ -75,7 +49,32 @@ def calculate_age_category(age, age_category_size=5):
 def get_all_clubs():
     """Get all running clubs ordered alphabetically"""
     clubs = db.collection("running_clubs").order_by("name").get()
-    return [club.to_dict()["name"] for club in clubs]
+    result = []
+    for club in clubs:
+        club_data = club.to_dict()
+        result.append(
+            {
+                "id": club.id,
+                "name": club_data["name"],
+                "short_names": club_data.get("short_names", []),
+            }
+        )
+    return result
+
+
+def get_club(club_id):
+    """Get single club"""
+    return db.collection("running_clubs").document(club_id).get()
+
+
+def update_club(club_id, data):
+    """Update existing club"""
+    return db.collection("running_clubs").document(club_id).update(data)
+
+
+def delete_club(club_id):
+    """Delete a club"""
+    return db.collection("running_clubs").document(club_id).delete()
 
 
 def club_exists(club_name):
@@ -132,9 +131,40 @@ def get_participant(participant_id):
     return db.collection("participants").document(participant_id).get()
 
 
-def add_club(club_name):
-    """Add new club"""
-    return db.collection("running_clubs").add({"name": club_name})
+RUNNING_CLUBS = [
+    {"name": "Chandler's Ford Swifts", "short_names": ["CF Swifts"]},
+    {"name": "Eastleigh Running Club", "short_names": ["Eastleigh"]},
+    {"name": "Halterworth Harriers", "short_names": ["Halterworth"]},
+    {"name": "Hamwic Harriers", "short_names": ["Hamwic"]},
+    {"name": "Hardley Runners", "short_names": ["Hardley"]},
+    {"name": "Hedge End Running Club", "short_names": ["Hedge End"]},
+    {"name": "Itchen Spitfires Running Club", "short_names": ["Itchen"]},
+    {"name": "Lordshill Road Runners", "short_names": ["Lordshill"]},
+    {
+        "name": "Lymington Triathlon Club & Lymington Athletes",
+        "short_names": ["Lymington"],
+    },
+    {"name": "Netley Abbey Runners", "short_names": ["Netley"]},
+    {"name": "New Forest Runners", "short_names": ["New Forest"]},
+    {"name": "Romsey Road Runners", "short_names": ["Romsey"]},
+    {"name": "Solent Running Sisters", "short_names": ["R Sisters"]},
+    {"name": "Southampton Athletic Club", "short_names": ["Soton AC"]},
+    {"name": "Southampton Triathlon Club", "short_names": ["Southampton Tri"]},
+    {"name": "Stubbington Green Runners", "short_names": ["Stubbington"]},
+    {"name": "Totton Running Club", "short_names": ["Totton"]},
+    {"name": "Winchester & District AC", "short_names": ["WADAC"]},
+    {"name": "Wessex Road Runners", "short_names": ["Wessex"]},
+    {"name": "Winchester Fit Club", "short_names": ["Winchester Fit"]},
+    {"name": "Winchester Running Club", "short_names": ["WinchesterRC"]},
+]
+
+
+def add_club(club_name, short_names=None):
+    """Add new club with optional short names"""
+    club_data = {"name": club_name}
+    if short_names:
+        club_data["short_names"] = short_names
+    return db.collection("running_clubs").add(club_data)
 
 
 def soft_delete_participant(participant_id):

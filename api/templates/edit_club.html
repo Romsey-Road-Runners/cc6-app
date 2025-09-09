@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Club</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Edit Club</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('update_club', club_id=club_id) }}">
+        <div class="form-group">
+            <label for="club_name">Club Name:</label>
+            <input type="text" id="club_name" name="club_name" value="{{ club.to_dict().name }}" required>
+        </div>
+        <div class="form-group">
+            <label for="short_names">Short Names (comma-separated):</label>
+            <input type="text" id="short_names" name="short_names" value="{{ club.to_dict().get('short_names', []) | join(', ') }}">
+        </div>
+        <button type="submit">Update Club</button>
+        <a href="{{ url_for('clubs') }}">Cancel</a>
+    </form>
+</body>
+</html>

@@ -231,6 +231,7 @@ def clubs():
 def add_club():
     """Add a new running club"""
     club_name = request.form.get("club_name", "").strip()
+    short_names = request.form.get("short_names", "").strip()
 
     if not club_name:
         flash("Club name is required")
@@ -241,13 +242,74 @@ def add_club():
         flash("Club already exists")
         return redirect(url_for("clubs"))
 
+    # Parse short names
+    short_names_list = (
+        [name.strip() for name in short_names.split(",") if name.strip()]
+        if short_names
+        else []
+    )
+
     # Add new club
     try:
-        database.add_club(club_name)
+        database.add_club(club_name, short_names_list)
         flash("Club added successfully!")
     except Exception:
         flash("Failed to add club. Please try again.")
 
+    return redirect(url_for("clubs"))
+
+
+@app.route("/edit_club/<club_id>", methods=["GET"])
+@login_required
+def edit_club(club_id):
+    """Show edit club form"""
+    club = database.get_club(club_id)
+    return render_template(
+        "edit_club.html",
+        club=club,
+        club_id=club_id,
+        user=session.get("user"),
+    )
+
+
+@app.route("/edit_club/<club_id>", methods=["POST"])
+@login_required
+def update_club(club_id):
+    """Update existing club"""
+    club_name = request.form.get("club_name", "").strip()
+    short_names = request.form.get("short_names", "").strip()
+
+    if not club_name:
+        flash("Club name is required")
+        return redirect(url_for("edit_club", club_id=club_id))
+
+    # Parse short names
+    short_names_list = (
+        [name.strip() for name in short_names.split(",") if name.strip()]
+        if short_names
+        else []
+    )
+
+    try:
+        database.update_club(
+            club_id, {"name": club_name, "short_names": short_names_list}
+        )
+        flash("Club updated successfully!")
+    except Exception:
+        flash("Failed to update club.")
+
+    return redirect(url_for("clubs"))
+
+
+@app.route("/delete_club/<club_id>", methods=["POST"])
+@login_required
+def delete_club(club_id):
+    """Delete a club"""
+    try:
+        database.delete_club(club_id)
+        flash("Club deleted successfully!")
+    except Exception:
+        flash("Failed to delete club.")
     return redirect(url_for("clubs"))
 
 

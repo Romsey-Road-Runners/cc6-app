@@ -45,7 +45,8 @@ class TestDatabase(unittest.TestCase):
     @patch("database.db")
     def test_get_all_clubs(self, mock_db):
         mock_club = Mock()
-        mock_club.to_dict.return_value = {"name": "Test Club"}
+        mock_club.to_dict.return_value = {"name": "Test Club", "short_names": ["TC"]}
+        mock_club.id = "club_id"
         mock_db.collection.return_value.order_by.return_value.get.return_value = [
             mock_club
         ]
@@ -54,7 +55,9 @@ class TestDatabase(unittest.TestCase):
 
         mock_db.collection.assert_called_with("running_clubs")
         mock_db.collection.return_value.order_by.assert_called_with("name")
-        self.assertEqual(result, ["Test Club"])
+        self.assertEqual(
+            result, [{"id": "club_id", "name": "Test Club", "short_names": ["TC"]}]
+        )
 
     @patch("database.db")
     def test_club_exists_true(self, mock_db):

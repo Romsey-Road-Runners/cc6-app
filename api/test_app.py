@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from app import app
 from database import (
@@ -35,9 +35,14 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, list)
 
-    def test_get_club_id_by_name(self):
+    @patch("database.db")
+    def test_get_club_id_by_name(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.id = "club_id"
+        mock_db.collection.return_value.where.return_value.get.return_value = [mock_doc]
+
         result = get_club_id_by_name("Chandler's Ford Swifts")
-        self.assertIsNotNone(result)
+        self.assertEqual(result, "club_id")
 
     def test_participants_requires_login(self):
         response = self.client.get("/participants")
