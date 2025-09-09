@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from app import app
 from database import (
@@ -238,6 +239,184 @@ class TestApp(unittest.TestCase):
 
         response = self.client.get("/race_results/test_race_id")
         self.assertEqual(response.status_code, 302)
+
+    @patch("database.get_all_seasons_with_ids")
+    @patch("database.get_races_by_season")
+    def test_api_seasons_with_id(self, mock_get_races, mock_get_seasons):
+        mock_get_seasons.return_value = [{"id": "season1", "name": "2024 Season"}]
+        mock_get_races.return_value = [
+            {"id": "race1", "name": "Test Race", "date": "2024-01-01"}
+        ]
+
+        response = self.client.get("/api/seasons/season1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["name"], "2024 Season")
+        self.assertIn("races", response.json)
+
+    @patch("database.get_all_seasons_with_ids")
+    def test_api_seasons_not_found(self, mock_get_seasons):
+        mock_get_seasons.return_value = []
+
+        response = self.client.get("/api/seasons/nonexistent")
+        self.assertEqual(response.status_code, 404)
+
+    @patch("database.get_all_races")
+    @patch("database.get_race_results")
+    def test_api_races_with_results(self, mock_get_results, mock_get_races):
+        mock_get_races.return_value = [
+            {
+                "id": "race1",
+                "name": "Test Race",
+                "date": "2024-01-01",
+                "season": "2024 Season",
+            }
+        ]
+        mock_get_results.return_value = [
+            {
+                "id": "result1",
+                "barcode": "A123456",
+                "position": "P0001",
+                "participant_name": "John Doe",
+                "gender": "Male",
+                "age_category": "Senior",
+            }
+        ]
+
+        response = self.client.get("/api/races/race1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["name"], "Test Race")
+        self.assertIn("results", response.json)
+        self.assertEqual(len(response.json["results"]), 1)
+
+    @patch("database.get_all_races")
+    def test_api_races_not_found(self, mock_get_races):
+        mock_get_races.return_value = []
+
+        response = self.client.get("/api/races/nonexistent")
+        self.assertEqual(response.status_code, 404)
+
+    @patch("database.get_all_races")
+    @patch("database.get_race_results")
+    def test_api_races_filter_missing_data(self, mock_get_results, mock_get_races):
+        mock_get_races.return_value = [
+            {
+                "id": "race1",
+                "name": "Test Race",
+                "date": "2024-01-01",
+                "season": "2024 Season",
+            }
+        ]
+        mock_get_results.return_value = [
+            {
+                "id": "result1",
+                "participant_name": "John Doe",
+                "gender": "Male",
+                "age_category": "Senior",
+            },
+            {"id": "result2", "participant_name": "", "gender": "", "age_category": ""},
+        ]
+
+        response = self.client.get("/api/races/race1")
+        self.assertEqual(len(response.json["results"]), 1)
+
+        response = self.client.get("/api/races/race1?showMissingData=true")
+        self.assertEqual(len(response.json["results"]), 2)
+
+    @patch("database.get_all_races")
+    @patch("database.get_race_results")
+    def test_api_races_filter_category(self, mock_get_results, mock_get_races):
+        mock_get_races.return_value = [
+            {
+                "id": "race1",
+                "name": "Test Race",
+                "date": "2024-01-01",
+                "season": "2024 Season",
+            }
+        ]
+        mock_get_results.return_value = [
+            {
+                "id": "result1",
+                "participant_name": "John Doe",
+                "gender": "Male",
+                "age_category": "Senior",
+            },
+            {
+                "id": "result2",
+                "participant_name": "Jane Doe",
+                "gender": "Female",
+                "age_category": "V40",
+            },
+        ]
+
+        response = self.client.get("/api/races/race1?category=Senior")
+        self.assertEqual(len(response.json["results"]), 1)
+        self.assertEqual(response.json["results"][0]["age_category"], "Senior")
+
+    @patch("database.get_all_races")
+    @patch("database.get_race_results")
+    def test_api_races_filter_gender(self, mock_get_results, mock_get_races):
+        mock_get_races.return_value = [
+            {
+                "id": "race1",
+                "name": "Test Race",
+                "date": "2024-01-01",
+                "season": "2024 Season",
+            }
+        ]
+        mock_get_results.return_value = [
+            {
+                "id": "result1",
+                "participant_name": "John Doe",
+                "gender": "Male",
+                "age_category": "Senior",
+            },
+            {
+                "id": "result2",
+                "participant_name": "Jane Doe",
+                "gender": "Female",
+                "age_category": "V40",
+            },
+        ]
+
+        response = self.client.get("/api/races/race1?gender=Female")
+        self.assertEqual(len(response.json["results"]), 1)
+        self.assertEqual(response.json["results"][0]["gender"], "Female")
+
+    @patch("database.get_all_races")
+    @patch("database.get_race_results")
+    def test_api_races_filter_combined(self, mock_get_results, mock_get_races):
+        mock_get_races.return_value = [
+            {
+                "id": "race1",
+                "name": "Test Race",
+                "date": "2024-01-01",
+                "season": "2024 Season",
+            }
+        ]
+        mock_get_results.return_value = [
+            {
+                "id": "result1",
+                "participant_name": "John Doe",
+                "gender": "Male",
+                "age_category": "Senior",
+            },
+            {
+                "id": "result2",
+                "participant_name": "Jane Doe",
+                "gender": "Female",
+                "age_category": "Senior",
+            },
+            {
+                "id": "result3",
+                "participant_name": "Bob Smith",
+                "gender": "Male",
+                "age_category": "V40",
+            },
+        ]
+
+        response = self.client.get("/api/races/race1?category=Senior&gender=Male")
+        self.assertEqual(len(response.json["results"]), 1)
+        self.assertEqual(response.json["results"][0]["participant_name"], "John Doe")
 
 
 if __name__ == "__main__":

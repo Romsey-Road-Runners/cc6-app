@@ -75,12 +75,12 @@ def get_race_with_results(race_id):
     show_missing = request.args.get("showMissingData", "false").lower() == "true"
     if not show_missing:
         results = [r for r in results if r.get("participant_name")]
-    
+
     # Filter by category if specified
     category = request.args.get("category")
     if category:
         results = [r for r in results if r.get("age_category") == category]
-    
+
     # Filter by gender if specified
     gender = request.args.get("gender")
     if gender:

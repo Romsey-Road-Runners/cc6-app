@@ -10,18 +10,22 @@ from database import (
     barcode_exists,
     club_exists,
     create_participant,
+    delete_race_result,
     get_admin_emails,
     get_all_clubs,
     get_all_races,
     get_all_seasons,
+    get_all_seasons_with_ids,
     get_participant,
     get_participants,
     get_race_results,
+    get_races_by_season,
     is_admin_email,
     remove_admin_email,
     season_exists,
     soft_delete_participant,
     update_participant,
+    update_race_result_position,
     validate_barcode,
 )
 
@@ -325,6 +329,83 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(result[0]["club"], "Test Club")
         self.assertEqual(result[0]["gender"], "Male")
         self.assertEqual(result[0]["age_category"], "Senior")
+
+    @patch("database.db")
+    def test_get_all_seasons_with_ids(self, mock_db):
+        mock_season = Mock()
+        mock_season.to_dict.return_value = {"name": "2024 Season"}
+        mock_season.id = "season_id"
+        mock_db.collection.return_value.order_by.return_value.get.return_value = [
+            mock_season
+        ]
+
+        result = get_all_seasons_with_ids()
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "season_id")
+        self.assertEqual(result[0]["name"], "2024 Season")
+
+    @patch("database.db")
+    def test_get_races_by_season(self, mock_db):
+        # Mock season document
+        mock_season_doc = Mock()
+        mock_season_doc.exists = True
+        mock_season_doc.to_dict.return_value = {"name": "2024 Season"}
+
+        # Mock race
+        mock_race = Mock()
+        mock_race.to_dict.return_value = {
+            "name": "Test Race",
+            "date": "2024-01-01",
+            "season": "2024 Season",
+        }
+        mock_race.id = "race_id"
+
+        def mock_collection_side_effect(collection_name):
+            mock_collection = Mock()
+            if collection_name == "seasons":
+                mock_collection.document.return_value.get.return_value = mock_season_doc
+            elif collection_name == "races":
+                mock_collection.where.return_value.get.return_value = [mock_race]
+            return mock_collection
+
+        mock_db.collection.side_effect = mock_collection_side_effect
+
+        result = get_races_by_season("season_id")
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["id"], "race_id")
+        self.assertEqual(result[0]["name"], "Test Race")
+
+    @patch("database.db")
+    def test_get_races_by_season_not_found(self, mock_db):
+        mock_season_doc = Mock()
+        mock_season_doc.exists = False
+
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_season_doc
+        )
+
+        result = get_races_by_season("nonexistent")
+        self.assertEqual(result, [])
+
+    @patch("database.db")
+    def test_delete_race_result(self, mock_db):
+        delete_race_result("result_id")
+
+        mock_db.collection.assert_called_with("race_results")
+        mock_db.collection.return_value.document.assert_called_with("result_id")
+        mock_db.collection.return_value.document.return_value.delete.assert_called_once()
+
+    @patch("database.db")
+    def test_update_race_result_position(self, mock_db):
+        update_race_result_position("result_id", "P0005")
+
+        mock_db.collection.assert_called_with("race_results")
+        mock_db.collection.return_value.document.assert_called_with("result_id")
+        mock_db.collection.return_value.document.return_value.update.assert_called_with(
+            {"position": "P0005"}
+        )
 
 
 if __name__ == "__main__":
