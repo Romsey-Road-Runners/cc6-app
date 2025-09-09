@@ -33,14 +33,14 @@ from database import (
 class TestDatabase(unittest.TestCase):
 
     def test_validate_barcode_valid(self):
-        self.assertTrue(validate_barcode("A123456"))
+        self.assertTrue(validate_barcode("A12"))
         self.assertTrue(validate_barcode("A1234567"))
         self.assertTrue(validate_barcode("a123456"))
 
     def test_validate_barcode_invalid(self):
         self.assertFalse(validate_barcode("B123456"))
-        self.assertFalse(validate_barcode("A12345"))
-        self.assertFalse(validate_barcode("A12345678"))
+        self.assertFalse(validate_barcode("A1"))
+        self.assertFalse(validate_barcode("A12345678123"))
 
     @patch("database.db")
     def test_get_all_clubs(self, mock_db):

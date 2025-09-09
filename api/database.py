@@ -28,7 +28,7 @@ def get_club_id_by_name(club_name):
 
 def validate_barcode(barcode):
     """Validate Parkrun barcode format (A followed by 6-7 digits)"""
-    return re.match(r"^A\d{6,7}$", barcode.upper()) is not None
+    return re.match(r"^A\d{2,8}$", barcode.upper()) is not None
 
 
 def calculate_age_category(age, age_category_size=5):
@@ -165,6 +165,35 @@ def add_club(club_name, short_names=None):
     if short_names:
         club_data["short_names"] = short_names
     return db.collection("running_clubs").add(club_data)
+
+
+def add_participants_batch(participants):
+    """Add participants in batch"""
+    batch_size = 500  # Firestore batch limit is 500
+    for i in range(0, len(participants), batch_size):
+        batch = db.batch()
+        chunk = participants[i : i + batch_size]
+        for participant in chunk:
+            participant["registered_at"] = firestore.SERVER_TIMESTAMP
+            doc_ref = db.collection("participants").document()
+            batch.set(doc_ref, participant)
+        batch.commit()
+
+
+def validate_and_normalize_club(club_input):
+    """Validate club name and return full name if valid"""
+    clubs = get_all_clubs()
+
+    for club in clubs:
+        # Check exact match with full name
+        if club["name"] == club_input:
+            return club["name"]
+
+        # Check if input matches any short name
+        if club_input in club["short_names"]:
+            return club["name"]
+
+    return None
 
 
 def soft_delete_participant(participant_id):

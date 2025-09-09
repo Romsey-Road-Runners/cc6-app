@@ -16,12 +16,32 @@
     
     <h1>Registered Participants</h1>
     
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('upload_participants') }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Upload Participants CSV:</label>
+            <input type="file" id="file" name="file" accept=".csv" required>
+            <small>Format: ID,Fname,Lname,Gender,DOB,Club (DOB as DD/MM/YYYY)</small>
+        </div>
+        <button type="submit">Upload CSV</button>
+    </form>
+    
+    <hr>
+    
     <table>
         <thead>
             <tr>
                 <th>First Name</th>
                 <th>Last Name</th>
-                <th>Email</th>
                 <th>Gender</th>
                 <th>DOB</th>
                 <th>Barcode</th>
@@ -35,7 +55,6 @@
             <tr>
                 <td>{{ participant.get('first_name') }}</td>
                 <td>{{ participant.get('last_name') }}</td>
-                <td>{{ participant.get('email') }}</td>
                 <td>{{ participant.get('gender') }}</td>
                 <td>{{ participant.get('date_of_birth') }}</td>
                 <td>{{ participant.get('barcode') }}</td>
@@ -50,7 +69,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="9">No participants registered yet.</td>
+                <td colspan="8">No participants registered yet.</td>
             </tr>
             {% endfor %}
         </tbody>

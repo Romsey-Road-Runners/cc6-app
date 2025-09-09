@@ -61,6 +61,13 @@
         </div>
     </div>
     
+    <div style="margin-bottom: 10px;">
+        <label>
+            <input type="checkbox" id="showMissingOnly" onchange="filterResults()">
+            Show only rows with missing participant names
+        </label>
+    </div>
+    
     <table>
         <thead>
             <tr>
@@ -266,6 +273,22 @@
                 searchResults.style.display = 'none';
             }
         });
+        
+        function filterResults() {
+            const showMissingOnly = document.getElementById('showMissingOnly').checked;
+            const rows = document.querySelectorAll('tbody tr[data-id]');
+            
+            rows.forEach(row => {
+                const nameCell = row.children[2]; // Name column
+                const hasName = nameCell.textContent.trim() !== '-' && nameCell.textContent.trim() !== '';
+                
+                if (showMissingOnly) {
+                    row.style.display = hasName ? 'none' : '';
+                } else {
+                    row.style.display = '';
+                }
+            });
+        }
     </script>
 </body>
 </html>

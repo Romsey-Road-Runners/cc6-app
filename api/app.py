@@ -70,7 +70,14 @@ def get_season_with_races(season_id):
         return jsonify({"error": "Season not found"}), 404
 
     races = database.get_races_by_season(season_id)
-    return jsonify({"id": season["id"], "name": season["name"], "races": races})
+    return jsonify(
+        {
+            "id": season["id"],
+            "name": season["name"],
+            "age_category_size": season.get("age_category_size", 5),
+            "races": races,
+        }
+    )
 
 
 @app.route("/api/races/<race_id>")
@@ -119,7 +126,6 @@ def register(participant_id=None):
 
     first_name = request.form.get("first_name", "").strip()
     last_name = request.form.get("last_name", "").strip()
-    email = request.form.get("email", "").strip()
     gender = request.form.get("gender", "")
     dob = request.form.get("dob", "")
     barcode = request.form.get("barcode", "").strip().upper()
@@ -132,10 +138,6 @@ def register(participant_id=None):
 
     if not last_name:
         flash("Last name is required")
-        return redirect(url_for("participants" if participant_id else "index"))
-
-    if not email:
-        flash("Email is required")
         return redirect(url_for("participants" if participant_id else "index"))
 
     if not gender:
@@ -165,7 +167,6 @@ def register(participant_id=None):
         data = {
             "first_name": first_name,
             "last_name": last_name,
-            "email": email,
             "gender": gender,
             "date_of_birth": dob,
             "barcode": barcode,
@@ -311,6 +312,138 @@ def delete_club(club_id):
     except Exception:
         flash("Failed to delete club.")
     return redirect(url_for("clubs"))
+
+
+@app.route("/upload_participants", methods=["POST"])
+@login_required
+def upload_participants():
+    """Upload participants from CSV"""
+    if "file" not in request.files:
+        flash("No file selected")
+        return redirect(url_for("participants"))
+
+    file = request.files["file"]
+    if file.filename == "":
+        flash("No file selected")
+        return redirect(url_for("participants"))
+
+    try:
+        import csv
+        import io
+        from datetime import datetime
+
+        content = file.read().decode("utf-8")
+        csv_reader = csv.reader(io.StringIO(content))
+
+        # Skip header row
+        next(csv_reader, None)
+
+        participants = []
+        seen_barcodes = set()
+        file_duplicates = 0
+        existing_in_db = 0
+        invalid_rows = 0
+        invalid_row_details = []
+
+        for row in csv_reader:
+            if len(row) < 6:
+                invalid_rows += 1
+                continue
+
+            barcode = row[0].strip().upper()
+            fname = row[1].strip()
+            lname = row[2].strip()
+            gender = row[3].strip()
+            dob = row[4].strip()
+            club = row[5].strip()
+
+            # Skip if invalid barcode
+            if not database.validate_barcode(barcode):
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid barcode '{barcode}'"
+                )
+                continue
+
+            # Skip duplicates in file
+            if barcode in seen_barcodes:
+                file_duplicates += 1
+                continue
+
+            # Skip if already exists in database
+            if database.barcode_exists(barcode):
+                existing_in_db += 1
+                continue
+
+            # Convert date format from DD/MM/YYYY to YYYY-MM-DD
+            try:
+                if dob:
+                    date_obj = datetime.strptime(dob, "%d/%m/%Y")
+                    dob = date_obj.strftime("%Y-%m-%d")
+            except ValueError:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid date '{row[4]}'"
+                )
+                continue
+
+            # Skip if required fields missing or invalid gender
+            if not all([fname, lname, gender, dob, club]):
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Missing required fields"
+                )
+                continue
+
+            if gender not in ["Male", "Female"]:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid gender '{gender}'"
+                )
+                continue
+
+            # Validate and normalize club name
+            normalized_club = database.validate_and_normalize_club(club)
+            if not normalized_club:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid club '{club}'"
+                )
+                continue
+
+            seen_barcodes.add(barcode)
+            participants.append(
+                {
+                    "first_name": fname,
+                    "last_name": lname,
+                    "email": "",
+                    "gender": gender,
+                    "date_of_birth": dob,
+                    "barcode": barcode,
+                    "club": normalized_club,
+                }
+            )
+
+        if participants:
+            database.add_participants_batch(participants)
+
+        message = f"Added {len(participants)} new participants."
+        if file_duplicates > 0:
+            message += f" Skipped {file_duplicates} duplicates in file."
+        if existing_in_db > 0:
+            message += f" Skipped {existing_in_db} already in database."
+        if invalid_rows > 0:
+            message += f" Skipped {invalid_rows} invalid rows."
+        flash(message)
+
+        # Flash invalid row details
+        for detail in invalid_row_details:
+            flash(detail)
+
+    except Exception:
+        flash("Failed to process CSV file. Please check the format.")
+
+    return redirect(url_for("participants"))
 
 
 @app.route("/edit_participant/<participant_id>", methods=["GET"])
