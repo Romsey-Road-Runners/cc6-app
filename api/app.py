@@ -30,6 +30,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/results")
+def public_results():
+    """Public results page"""
+    return render_template("public_results.html")
+
+
 @app.route("/robots.txt")
 def robots_txt():
     return app.send_static_file("robots.txt")
