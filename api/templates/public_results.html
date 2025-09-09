@@ -218,6 +218,8 @@
                         <thead>
                             <tr>
                                 <th>Position</th>
+                                <th>Position Token</th>
+                                <th>Barcode</th>
                                 <th>Name</th>
                                 <th>Gender</th>
                                 <th>Category</th>
@@ -227,10 +229,12 @@
                         <tbody>
                 `;
                 
-                raceData.results.forEach(result => {
+                raceData.results.forEach((result, index) => {
                     html += `
                         <tr>
+                            <td>${index + 1}</td>
                             <td>${result.position}</td>
+                            <td>${result.barcode || '-'}</td>
                             <td>${result.participant_name || '-'}</td>
                             <td>${result.gender || '-'}</td>
                             <td>${result.age_category || '-'}</td>
