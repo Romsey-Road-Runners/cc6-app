@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seasons</title>
+    <title>Edit Season</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -11,7 +11,7 @@
     
     {% include 'nav.html' %}
 
-    <h1>Seasons</h1>
+    <h1>Edit Season</h1>
     
     {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -23,46 +23,26 @@
         {% endif %}
     {% endwith %}
     
-    <form method="POST" action="{{ url_for('add_season') }}">
+    <form method="POST" action="{{ url_for('update_season', season_id=season_id) }}">
         <div class="form-group">
             <label for="season_name">Season Name:</label>
-            <input type="text" id="season_name" name="season_name" placeholder="Enter season name" required>
+            <input type="text" id="season_name" name="season_name" value="{{ season.to_dict().name }}" required>
         </div>
         <div class="form-group">
             <label>Age Categories:</label>
             <div class="radio-group">
                 <label class="radio-label">
-                    <input type="radio" name="age_category_type" value="10_year" required>
+                    <input type="radio" name="age_category_type" value="10_year" {% if season.to_dict().age_category_size == 10 %}checked{% endif %} required>
                     10 Year Categories (Senior, V40, V50, V60, V70, V80)
                 </label>
                 <label class="radio-label">
-                    <input type="radio" name="age_category_type" value="5_year" required>
+                    <input type="radio" name="age_category_type" value="5_year" {% if season.to_dict().age_category_size == 5 %}checked{% endif %} required>
                     5 Year Categories (Senior, V40, V45, V50, V55, V60, V65, V70, V75, V80)
                 </label>
             </div>
         </div>
-        <button type="submit">Add Season</button>
+        <button type="submit">Update Season</button>
+        <a href="{{ url_for('seasons') }}">Cancel</a>
     </form>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Season Name</th>
-                <th>Age Categories</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for season in seasons %}
-            <tr>
-                <td>{{ season.name }}</td>
-                <td>{{ season.age_category_size }} Year Categories</td>
-                <td>
-                    <a href="{{ url_for('edit_season', season_id=season.id) }}">Edit</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </body>
 </html>

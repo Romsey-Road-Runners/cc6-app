@@ -214,21 +214,6 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, list)
 
-    def test_upload_results_requires_auth(self):
-        response = self.client.get("/upload_results")
-        self.assertEqual(response.status_code, 302)
-
-    def test_upload_results_post_requires_auth(self):
-        response = self.client.post("/upload_results", data={"race_name": "Test Race"})
-        self.assertEqual(response.status_code, 302)
-
-    def test_upload_results_with_auth(self):
-        with self.client.session_transaction() as sess:
-            sess["user"] = {"email": "test@example.com"}
-
-        response = self.client.get("/upload_results")
-        self.assertEqual(response.status_code, 200)
-
     def test_race_results_requires_auth(self):
         response = self.client.get("/race_results/test_race_id")
         self.assertEqual(response.status_code, 302)

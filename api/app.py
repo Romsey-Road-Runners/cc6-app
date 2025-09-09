@@ -328,7 +328,7 @@ def remove_admin():
 @login_required
 def seasons():
     """View all seasons"""
-    seasons = database.get_all_seasons()
+    seasons = database.get_all_seasons_with_ids()
     return render_template("seasons.html", seasons=seasons, user=session.get("user"))
 
 
@@ -337,20 +337,70 @@ def seasons():
 def add_season():
     """Add a new season"""
     season_name = request.form.get("season_name", "").strip()
+    age_category_type = request.form.get("age_category_type", "")
 
     if not season_name:
         flash("Season name is required")
+        return redirect(url_for("seasons"))
+
+    if not age_category_type:
+        flash("Age category type is required")
         return redirect(url_for("seasons"))
 
     if database.season_exists(season_name):
         flash("Season already exists")
         return redirect(url_for("seasons"))
 
+    # Convert type to size
+    age_category_size = 5 if age_category_type == "5_year" else 10
+
     try:
-        database.add_season(season_name)
+        database.add_season(season_name, age_category_size)
         flash("Season added successfully!")
     except Exception:
         flash("Failed to add season.")
+
+    return redirect(url_for("seasons"))
+
+
+@app.route("/edit_season/<season_id>", methods=["GET"])
+@login_required
+def edit_season(season_id):
+    """Show edit season form"""
+    season = database.get_season(season_id)
+    return render_template(
+        "edit_season.html",
+        season=season,
+        season_id=season_id,
+        user=session.get("user"),
+    )
+
+
+@app.route("/edit_season/<season_id>", methods=["POST"])
+@login_required
+def update_season(season_id):
+    """Update existing season"""
+    season_name = request.form.get("season_name", "").strip()
+    age_category_type = request.form.get("age_category_type", "")
+
+    if not season_name:
+        flash("Season name is required")
+        return redirect(url_for("edit_season", season_id=season_id))
+
+    if not age_category_type:
+        flash("Age category type is required")
+        return redirect(url_for("edit_season", season_id=season_id))
+
+    # Convert type to size
+    age_category_size = 5 if age_category_type == "5_year" else 10
+
+    try:
+        database.update_season(
+            season_id, {"name": season_name, "age_category_size": age_category_size}
+        )
+        flash("Season updated successfully!")
+    except Exception:
+        flash("Failed to update season.")
 
     return redirect(url_for("seasons"))
 

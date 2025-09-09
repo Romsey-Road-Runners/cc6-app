@@ -47,30 +47,10 @@
         </div>
         <div class="filter-group">
             <label>Category:</label>
-            <div class="checkboxes">
+            <div class="checkboxes" id="categoryFilters">
                 <div class="checkbox-group">
                     <input type="radio" id="catAll" name="category" value="">
                     <label for="catAll">All</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="radio" id="catSenior" name="category" value="Senior">
-                    <label for="catSenior">Senior</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="radio" id="catV40" name="category" value="V40">
-                    <label for="catV40">V40</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="radio" id="catV50" name="category" value="V50">
-                    <label for="catV50">V50</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="radio" id="catV60" name="category" value="V60">
-                    <label for="catV60">V60</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="radio" id="catV70" name="category" value="V70">
-                    <label for="catV70">V70</label>
                 </div>
             </div>
         </div>
@@ -148,6 +128,11 @@
                 
                 raceSelect.disabled = false;
                 document.getElementById('loadResults').disabled = true;
+                
+                // Update category filters based on season
+                const categorySize = seasonData.age_category_size || 5;
+                const categories = generateAgeCategories(categorySize);
+                updateCategoryFilters(categories);
             } catch (error) {
                 console.error('Error loading races:', error);
             }
@@ -266,8 +251,32 @@
         
         document.getElementById('loadResults').addEventListener('click', loadResults);
         
+        // Generate age categories based on size
+        function generateAgeCategories(size) {
+            const categories = ['Senior'];
+            for (let age = 40; age <= 80; age += size) {
+                categories.push(`V${age}`);
+            }
+            return categories;
+        }
+        
+        // Update category filters
+        function updateCategoryFilters(categories) {
+            const container = document.getElementById('categoryFilters');
+            container.innerHTML = '<div class="checkbox-group"><input type="radio" id="catAll" name="category" value="" checked><label for="catAll">All</label></div>';
+            
+            categories.forEach(category => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-group';
+                div.innerHTML = `
+                    <input type="radio" id="cat${category}" name="category" value="${category}">
+                    <label for="cat${category}">${category}</label>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
         // Set default radio button selections
-        document.getElementById('catAll').checked = true;
         document.getElementById('genderAll').checked = true;
         
         // Load seasons on page load

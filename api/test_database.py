@@ -230,10 +230,13 @@ class TestDatabase(unittest.TestCase):
     @patch("database.db")
     def test_add_season(self, mock_db):
         season_name = "2024 Season"
-        add_season(season_name)
+        age_category_size = 5
+        add_season(season_name, age_category_size)
 
         mock_db.collection.assert_called_with("seasons")
-        mock_db.collection.return_value.add.assert_called_with({"name": season_name})
+        mock_db.collection.return_value.add.assert_called_with(
+            {"name": season_name, "age_category_size": age_category_size}
+        )
 
     @patch("database.db")
     def test_get_all_races(self, mock_db):

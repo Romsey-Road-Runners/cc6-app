@@ -57,6 +57,21 @@ def validate_barcode(barcode):
     return re.match(r"^A\d{6,7}$", barcode.upper()) is not None
 
 
+def calculate_age_category(age, age_category_size=5):
+    """Calculate age category based on age and category size"""
+    if age < 40:
+        return "Senior"
+
+    # Calculate the appropriate V category
+    base_age = 40
+    while base_age <= 80:
+        if age < base_age + age_category_size:
+            return f"V{base_age}"
+        base_age += age_category_size
+
+    return "V80"  # Maximum category
+
+
 def get_all_clubs():
     """Get all running clubs ordered alphabetically"""
     clubs = db.collection("running_clubs").order_by("name").get()
@@ -221,9 +236,21 @@ def season_exists(season_name):
     return len(existing) > 0
 
 
-def add_season(season_name):
-    """Add new season"""
-    return db.collection("seasons").add({"name": season_name})
+def add_season(season_name, age_category_size):
+    """Add new season with age category size"""
+    return db.collection("seasons").add(
+        {"name": season_name, "age_category_size": age_category_size}
+    )
+
+
+def get_season(season_id):
+    """Get single season"""
+    return db.collection("seasons").document(season_id).get()
+
+
+def update_season(season_id, data):
+    """Update existing season"""
+    return db.collection("seasons").document(season_id).update(data)
 
 
 def get_all_races():
@@ -307,16 +334,28 @@ def get_race_results(race_name):
                         )
                     )
 
-                    if age < 40:
-                        result_data["age_category"] = "Senior"
-                    elif age < 50:
-                        result_data["age_category"] = "V40"
-                    elif age < 60:
-                        result_data["age_category"] = "V50"
-                    elif age < 70:
-                        result_data["age_category"] = "V60"
-                    else:
-                        result_data["age_category"] = "V70"
+                    # Get season age category size
+                    season_name = None
+                    if races:
+                        season_name = races[0].to_dict().get("season")
+
+                    age_category_size = 5  # Default
+                    if season_name:
+                        seasons = (
+                            db.collection("seasons")
+                            .where(
+                                filter=firestore.FieldFilter("name", "==", season_name)
+                            )
+                            .get()
+                        )
+                        if seasons:
+                            age_category_size = (
+                                seasons[0].to_dict().get("age_category_size", 5)
+                            )
+
+                    result_data["age_category"] = calculate_age_category(
+                        age, age_category_size
+                    )
                 except ValueError:
                     result_data["age_category"] = ""
             else:
