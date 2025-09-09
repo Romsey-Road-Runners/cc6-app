@@ -6,7 +6,7 @@
     <title>Race Results - CC6</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .filters { margin: 20px 0; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+        .filters { margin: 20px 0; display: flex; flex-direction: column; gap: 20px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-weight: bold; }
         .checkboxes { display: flex; gap: 15px; flex-wrap: wrap; }
@@ -45,17 +45,6 @@
                 <option value="">Select Race</option>
             </select>
         </div>
-        
-        <div class="filter-group">
-            <label>Filters:</label>
-            <div class="checkboxes">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="showMissing" value="showMissingData">
-                    <label for="showMissing">Show Missing Data</label>
-                </div>
-            </div>
-        </div>
-        
         <div class="filter-group">
             <label>Category:</label>
             <div class="checkboxes">
@@ -85,7 +74,6 @@
                 </div>
             </div>
         </div>
-        
         <div class="filter-group">
             <label>Gender:</label>
             <div class="checkboxes">
@@ -103,7 +91,15 @@
                 </div>
             </div>
         </div>
-        
+        <div class="filter-group">
+            <label>Options:</label>
+            <div class="checkboxes">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showMissing" value="showMissingData">
+                    <label for="showMissing">Include participants with missing data</label>
+                </div>
+            </div>
+        </div>
         <button id="loadResults" disabled>Load Results</button>
     </div>
     
