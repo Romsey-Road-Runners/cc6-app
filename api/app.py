@@ -454,6 +454,19 @@ def reorder_race_results():
         return jsonify({"success": False}), 400
 
 
+@app.route("/delete_all_race_results/<race_name>", methods=["POST"])
+@login_required
+def delete_all_race_results(race_name):
+    """Delete all results for a race"""
+    try:
+        database.delete_all_race_results(race_name)
+        flash("All race results deleted successfully!")
+    except Exception:
+        flash("Failed to delete race results.")
+
+    return redirect(request.referrer or url_for("races"))
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)

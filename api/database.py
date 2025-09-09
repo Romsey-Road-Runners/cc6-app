@@ -308,3 +308,17 @@ def update_race_result_position(result_id, new_position):
         .document(result_id)
         .update({"position": new_position})
     )
+
+
+def delete_all_race_results(race_name):
+    """Delete all results for a race"""
+    results = (
+        db.collection("race_results")
+        .where(filter=firestore.FieldFilter("race_name", "==", race_name))
+        .get()
+    )
+
+    batch = db.batch()
+    for result in results:
+        batch.delete(result.reference)
+    batch.commit()

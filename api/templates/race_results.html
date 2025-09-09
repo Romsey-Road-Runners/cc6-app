@@ -8,9 +8,8 @@
     <style>
         body { max-width: 1000px; }
         th, td { border-bottom: 1px solid #ddd; }
-        .dragging { opacity: 0.5; }
         .delete-btn { color: red; cursor: pointer; }
-        tbody tr { cursor: move; }
+        .arrow-btn { background: none; border: none; cursor: pointer; font-size: 16px; }
         .missing-position, .duplicate-position { background-color: #ffcccc; }
     </style>
 </head>
@@ -22,6 +21,10 @@
     <h1>{{ season }}</h1>
     <h2>{{ race_name }}</h2>
     <h3>{{ race_date }}</h3>
+    
+    <form method="POST" action="{{ url_for('delete_all_race_results', race_name=race_name) }}" style="margin-bottom: 20px;">
+        <button type="submit" onclick="return confirm('Delete ALL results for this race? This cannot be undone!')" style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; cursor: pointer;">Delete All Results</button>
+    </form>
     
     <table>
         <thead>
@@ -45,6 +48,8 @@
                 <td>{{ result.age or '-' }}</td>
                 <td>{{ result.club or '-' }}</td>
                 <td>
+                    <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'up')" title="Move up">↑</button>
+                    <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'down')" title="Move down">↓</button>
                     <form method="POST" action="{{ url_for('delete_race_result', result_id=result.id) }}" style="display: inline;">
                         <button type="submit" class="delete-btn" onclick="return confirm('Delete this result?')">×</button>
                     </form>
@@ -58,45 +63,38 @@
         </tbody>
     </table>
     <script>
-        let draggedElement = null;
-        
-        document.querySelectorAll('tbody tr').forEach(row => {
-            row.draggable = true;
+        function moveResult(resultId, direction) {
+            if (!confirm('Move this result ' + direction + '?')) {
+                return;
+            }
             
-            row.addEventListener('dragstart', function(e) {
-                draggedElement = this;
-                this.classList.add('dragging');
-            });
+            const rows = Array.from(document.querySelectorAll('tbody tr[data-id]'));
+            const currentRow = rows.find(row => row.dataset.id === resultId);
+            const currentIndex = rows.indexOf(currentRow);
             
-            row.addEventListener('dragend', function(e) {
-                this.classList.remove('dragging');
-                draggedElement = null;
-            });
+            let newIndex;
+            if (direction === 'up' && currentIndex > 0) {
+                newIndex = currentIndex - 1;
+            } else if (direction === 'down' && currentIndex < rows.length - 1) {
+                newIndex = currentIndex + 1;
+            } else {
+                return;
+            }
             
-            row.addEventListener('dragover', function(e) {
-                e.preventDefault();
-            });
+            const tbody = currentRow.parentNode;
+            const targetRow = rows[newIndex];
             
-            row.addEventListener('drop', function(e) {
-                e.preventDefault();
-                if (draggedElement && draggedElement !== this) {
-                    const tbody = this.parentNode;
-                    const draggedIndex = Array.from(tbody.children).indexOf(draggedElement);
-                    const targetIndex = Array.from(tbody.children).indexOf(this);
-                    
-                    if (draggedIndex < targetIndex) {
-                        tbody.insertBefore(draggedElement, this.nextSibling);
-                    } else {
-                        tbody.insertBefore(draggedElement, this);
-                    }
-                    
-                    updatePositions();
-                }
-            });
-        });
+            if (direction === 'up') {
+                tbody.insertBefore(currentRow, targetRow);
+            } else {
+                tbody.insertBefore(currentRow, targetRow.nextSibling);
+            }
+            
+            updatePositions();
+        }
         
         function updatePositions() {
-            const rows = document.querySelectorAll('tbody tr');
+            const rows = document.querySelectorAll('tbody tr[data-id]');
             const updates = [];
             
             rows.forEach((row, index) => {
