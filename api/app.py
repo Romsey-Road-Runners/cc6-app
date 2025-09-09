@@ -70,6 +70,12 @@ def get_race_with_results(race_id):
         return jsonify({"error": "Race not found"}), 404
 
     results = database.get_race_results(race["name"])
+
+    # Filter out results without participant data unless showMissingData is true
+    show_missing = request.args.get("showMissingData", "false").lower() == "true"
+    if not show_missing:
+        results = [r for r in results if r.get("participant_name")]
+
     return jsonify(
         {
             "id": race["id"],

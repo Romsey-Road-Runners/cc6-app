@@ -324,7 +324,7 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(result[0]["participant_name"], "John Doe")
         self.assertEqual(result[0]["club"], "Test Club")
         self.assertEqual(result[0]["gender"], "Male")
-        self.assertEqual(result[0]["age"], "Senior")
+        self.assertEqual(result[0]["age_category"], "Senior")
 
 
 if __name__ == "__main__":

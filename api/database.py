@@ -308,23 +308,23 @@ def get_race_results(race_name):
                     )
 
                     if age < 40:
-                        result_data["age"] = "Senior"
+                        result_data["age_category"] = "Senior"
                     elif age < 50:
-                        result_data["age"] = "V40"
+                        result_data["age_category"] = "V40"
                     elif age < 60:
-                        result_data["age"] = "V50"
+                        result_data["age_category"] = "V50"
                     elif age < 70:
-                        result_data["age"] = "V60"
+                        result_data["age_category"] = "V60"
                     else:
-                        result_data["age"] = "V70"
+                        result_data["age_category"] = "V70"
                 except ValueError:
-                    result_data["age"] = ""
+                    result_data["age_category"] = ""
             else:
-                result_data["age"] = ""
+                result_data["age_category"] = ""
         else:
             result_data["participant_name"] = ""
             result_data["club"] = ""
-            result_data["age"] = ""
+            result_data["age_category"] = ""
             result_data["gender"] = ""
 
         result_list.append(result_data)
