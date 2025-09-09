@@ -43,8 +43,42 @@ def get_clubs():
 
 @app.route("/api/seasons")
 def get_seasons():
-    """API endpoint to get seasons"""
-    return jsonify(database.get_all_seasons())
+    """API endpoint to get seasons with IDs"""
+    return jsonify(database.get_all_seasons_with_ids())
+
+
+@app.route("/api/seasons/<season_id>")
+def get_season_with_races(season_id):
+    """API endpoint to get season with nested races"""
+    seasons = database.get_all_seasons_with_ids()
+    season = next((s for s in seasons if s["id"] == season_id), None)
+
+    if not season:
+        return jsonify({"error": "Season not found"}), 404
+
+    races = database.get_races_by_season(season_id)
+    return jsonify({"id": season["id"], "name": season["name"], "races": races})
+
+
+@app.route("/api/races/<race_id>")
+def get_race_with_results(race_id):
+    """API endpoint to get race with nested results"""
+    races = database.get_all_races()
+    race = next((r for r in races if r["id"] == race_id), None)
+
+    if not race:
+        return jsonify({"error": "Race not found"}), 404
+
+    results = database.get_race_results(race["name"])
+    return jsonify(
+        {
+            "id": race["id"],
+            "name": race["name"],
+            "date": race["date"],
+            "season": race["season"],
+            "results": results,
+        }
+    )
 
 
 @app.route("/register", methods=["POST"])

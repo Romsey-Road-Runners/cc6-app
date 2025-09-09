@@ -76,8 +76,8 @@
                 select.innerHTML = '<option value="">Select a season</option>';
                 seasons.forEach(season => {
                     const option = document.createElement('option');
-                    option.value = season;
-                    option.textContent = season;
+                    option.value = season.name;
+                    option.textContent = season.name;
                     select.appendChild(option);
                 });
             })

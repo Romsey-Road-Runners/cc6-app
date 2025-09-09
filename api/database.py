@@ -173,6 +173,44 @@ def get_all_seasons():
     return [season.to_dict()["name"] for season in seasons]
 
 
+def get_all_seasons_with_ids():
+    """Get all seasons with IDs ordered by name"""
+    seasons = db.collection("seasons").order_by("name").get()
+    result = []
+    for season in seasons:
+        season_data = season.to_dict()
+        season_data["id"] = season.id
+        result.append(season_data)
+    return result
+
+
+def get_races_by_season(season_id):
+    """Get races for a specific season"""
+    # Get season name by ID
+    season_doc = db.collection("seasons").document(season_id).get()
+    if not season_doc.exists:
+        return []
+
+    season_name = season_doc.to_dict().get("name")
+
+    # Get races for this season
+    races = (
+        db.collection("races")
+        .where(filter=firestore.FieldFilter("season", "==", season_name))
+        .get()
+    )
+
+    result = []
+    for race in races:
+        race_data = race.to_dict()
+        race_data["id"] = race.id
+        result.append(race_data)
+
+    # Sort by date in Python instead of Firestore
+    result.sort(key=lambda x: x.get("date", ""))
+    return result
+
+
 def season_exists(season_name):
     """Check if season exists"""
     existing = (
