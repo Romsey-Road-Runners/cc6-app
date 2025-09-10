@@ -77,8 +77,8 @@
                 select.innerHTML = '<option value="">Select a club</option>';
                 clubs.forEach(club => {
                     const option = document.createElement('option');
-                    option.value = club;
-                    option.textContent = club;
+                    option.value = club.name;
+                    option.textContent = club.name;
                     select.appendChild(option);
                 });
             })

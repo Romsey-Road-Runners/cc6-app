@@ -167,16 +167,41 @@ def add_club(club_name, short_names=None):
     return db.collection("running_clubs").add(club_data)
 
 
-def add_participants_batch(participants):
-    """Add participants in batch"""
-    batch_size = 500  # Firestore batch limit is 500
-    for i in range(0, len(participants), batch_size):
+def get_participant_by_barcode(barcode):
+    """Get participant by barcode"""
+    participants = (
+        db.collection("participants")
+        .where(filter=firestore.FieldFilter("barcode", "==", barcode))
+        .get()
+    )
+    if participants and not participants[0].to_dict().get("deleted", False):
+        participant_data = participants[0].to_dict()
+        participant_data["id"] = participants[0].id
+        return participant_data
+    return None
+
+
+def process_participants_batch(new_participants, updated_participants):
+    """Process new and updated participants in batch"""
+    batch_size = 500
+
+    # Process new participants
+    for i in range(0, len(new_participants), batch_size):
         batch = db.batch()
-        chunk = participants[i : i + batch_size]
+        chunk = new_participants[i : i + batch_size]
         for participant in chunk:
             participant["registered_at"] = firestore.SERVER_TIMESTAMP
             doc_ref = db.collection("participants").document()
             batch.set(doc_ref, participant)
+        batch.commit()
+
+    # Process updated participants
+    for i in range(0, len(updated_participants), batch_size):
+        batch = db.batch()
+        chunk = updated_participants[i : i + batch_size]
+        for participant_id, data in chunk:
+            doc_ref = db.collection("participants").document(participant_id)
+            batch.update(doc_ref, data)
         batch.commit()
 
 

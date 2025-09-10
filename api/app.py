@@ -338,10 +338,11 @@ def upload_participants():
         # Skip header row
         next(csv_reader, None)
 
-        participants = []
+        new_participants = []
+        updated_participants = []
         seen_barcodes = set()
         file_duplicates = 0
-        existing_in_db = 0
+        unchanged_records = 0
         invalid_rows = 0
         invalid_row_details = []
 
@@ -368,11 +369,6 @@ def upload_participants():
             # Skip duplicates in file
             if barcode in seen_barcodes:
                 file_duplicates += 1
-                continue
-
-            # Skip if already exists in database
-            if database.barcode_exists(barcode):
-                existing_in_db += 1
                 continue
 
             # Convert date format from DD/MM/YYYY to YYYY-MM-DD
@@ -411,8 +407,33 @@ def upload_participants():
                 )
                 continue
 
+            # Check if participant exists in database
+            existing_participant = database.get_participant_by_barcode(barcode)
+            if existing_participant:
+                # Compare data to see if update is needed
+                new_data = {
+                    "first_name": fname,
+                    "last_name": lname,
+                    "gender": gender,
+                    "date_of_birth": dob,
+                    "club": normalized_club,
+                }
+
+                # Check if any field has changed
+                has_changes = False
+                for key, value in new_data.items():
+                    if existing_participant.get(key) != value:
+                        has_changes = True
+                        break
+
+                if has_changes:
+                    updated_participants.append((existing_participant["id"], new_data))
+                else:
+                    unchanged_records += 1
+                continue
+
             seen_barcodes.add(barcode)
-            participants.append(
+            new_participants.append(
                 {
                     "first_name": fname,
                     "last_name": lname,
@@ -424,14 +445,16 @@ def upload_participants():
                 }
             )
 
-        if participants:
-            database.add_participants_batch(participants)
+        if new_participants or updated_participants:
+            database.process_participants_batch(new_participants, updated_participants)
 
-        message = f"Added {len(participants)} new participants."
+        message = f"Added {len(new_participants)} new participants."
+        if len(updated_participants) > 0:
+            message += f" Updated {len(updated_participants)} existing participants."
+        if unchanged_records > 0:
+            message += f" {unchanged_records} records unchanged."
         if file_duplicates > 0:
             message += f" Skipped {file_duplicates} duplicates in file."
-        if existing_in_db > 0:
-            message += f" Skipped {existing_in_db} already in database."
         if invalid_rows > 0:
             message += f" Skipped {invalid_rows} invalid rows."
         flash(message)
