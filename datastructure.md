@@ -12,7 +12,7 @@ This document describes the Firestore data model used in this application.
   - `last_name` (string)
   - `date_of_birth` (string, ISO date format, e.g., "1990-01-01")
   - `club` (string, references the club document ID — the club name)
-  - `gender` (enum: "M", "F", "Other")
+  - `gender` (enum: "M", "F")
 
 **Example:**
 ```
@@ -60,9 +60,8 @@ This document describes the Firestore data model used in this application.
 
 #### results (subcollection of race)
 
-- **Document ID:** finish token (number or string)
+- **Document ID:** finish token (string)
 - **Fields:**
-  - `finish_token`: number or string (should match document ID)
   - `participant`: object (see below)
 
 ##### participant (object embedded in result)
@@ -70,14 +69,14 @@ This document describes the Firestore data model used in this application.
 - `parkrun_barcode_id`: string
 - `first_name`: string
 - `last_name`: string
-- `gender`: enum ("M", "F", "Other")
+- `gender`: enum ("M", "F")
 - `age_category`: string (e.g., "M40-44")
 - `club`: string (club name at time of race)
 
 **Example:**
 ```json
+// Document ID: "25"
 {
-  "finish_token": 25,
   "participant": {
     "parkrun_barcode_id": "A1234567",
     "first_name": "Jane",
@@ -96,13 +95,14 @@ This document describes the Firestore data model used in this application.
 ### gender (for participants)
 - "M" (Male)
 - "F" (Female)
-- "Other"
 
 ---
 
 ### Indexing
 
 A collection group index should be created on `results.participant.club` and `results.participant.parkrun_barcode_id` for efficient queries across all race results.
+
+**A composite index should be created on each race's `results` subcollection for the fields `participant.gender` and `participant.age_category` (for queries like: all F 40-44 finishers in a race).**
 
 ---
 
