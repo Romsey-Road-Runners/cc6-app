@@ -44,6 +44,53 @@ This document describes the Firestore data model used in this application.
 
 ---
 
+## season (collection)
+
+- **Document ID:** season name (e.g., "2024-25")
+- **Subcollections:** `races`
+
+### races (subcollection of season)
+
+- **Document ID:** race name (e.g., "Race 1")
+- **Fields:**
+  - `date`: string (ISO format, e.g., "2024-10-15")
+  - `organising_clubs`: array of club names (strings; matches club document IDs in the clubs collection)
+
+- **Subcollections:** `results`
+
+#### results (subcollection of race)
+
+- **Document ID:** finish token (number or string)
+- **Fields:**
+  - `finish_token`: number or string (should match document ID)
+  - `participant`: object (see below)
+
+##### participant (object embedded in result)
+
+- `parkrun_barcode_id`: string
+- `first_name`: string
+- `last_name`: string
+- `gender`: enum ("M", "F", "Other")
+- `age_category`: string (e.g., "M40-44")
+- `club`: string (club name at time of race)
+
+**Example:**
+```json
+{
+  "finish_token": 25,
+  "participant": {
+    "parkrun_barcode_id": "A1234567",
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "gender": "F",
+    "age_category": "F40-44",
+    "club": "Romsey Road Runners"
+  }
+}
+```
+
+---
+
 ## Enumerations
 
 ### gender (for participants)
@@ -53,8 +100,15 @@ This document describes the Firestore data model used in this application.
 
 ---
 
-## Notes
+### Indexing
 
+A collection group index should be created on `results.participant.club` and `results.participant.parkrun_barcode_id` for efficient queries across all race results.
+
+---
+
+**Notes:**  
+- Embedding participant data in results ensures race data is "frozen in time" and not affected by later participant profile changes.
+- `organising_clubs` is an array of club names, matching the club document IDs in the `clubs` collection.
 - The `club` field in the participant document should match the club document's ID (club name).
 - If additional club metadata is required in the future (e.g., location, website), add more fields to the club documents.
 - For efficient lookups, ensure club names are unique and normalized (e.g., consistent casing and spacing).
