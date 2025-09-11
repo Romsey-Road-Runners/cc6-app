@@ -32,7 +32,11 @@ This document describes the Firestore data model used in this application.
 
 - **Document ID:** club name (string, unique, normalized)
 - **Fields:**
-  - `short_names` (array of strings, e.g., `["RRR", "Romsey RR", "Romsey"]`)
+  - `short_names` (array of strings, e.g., `[
+"RRR",
+"Romsey RR",
+"Romsey"
+]`)
 
 **Example:**
 ```
@@ -112,4 +116,4 @@ A collection group index should be created on `results.participant.club` and `re
 - The `club` field in the participant document should match the club document's ID (club name).
 - If additional club metadata is required in the future (e.g., location, website), add more fields to the club documents.
 - For efficient lookups, ensure club names are unique and normalized (e.g., consistent casing and spacing).
-- To support club name changes, consider using a unique slug or code as the club document ID instead.
+- **Design note:** The choice to use the club name as the document ID (rather than a slug or code) is a deliberate trade-off to avoid having to query the clubs collection to retrieve the club name when processing results. This improves simplicity and efficiency at the cost of making club renames more complex.
