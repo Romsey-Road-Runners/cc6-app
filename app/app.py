@@ -182,7 +182,7 @@ def register(participant_id=None):
 
 @app.route("/login")
 def login():
-    redirect_uri = url_for("auth_callback", _external=True)
+    redirect_uri = url_for("auth_callback", _external=True, _scheme="https")
     return google.authorize_redirect(redirect_uri)
 
 
@@ -333,6 +333,9 @@ def upload_participants():
         # Skip header row
         next(csv_reader, None)
 
+        # Get clubs list once for validation
+        clubs = database.get_clubs()
+
         new_participants = []
         updated_participants = []
         seen_barcodes = set()
@@ -394,7 +397,7 @@ def upload_participants():
                 continue
 
             # Validate and normalize club name
-            normalized_club = database.validate_and_normalize_club(club)
+            normalized_club = database.validate_and_normalize_club(club, clubs)
             if not normalized_club:
                 invalid_rows += 1
                 invalid_row_details.append(
@@ -559,17 +562,33 @@ def seasons():
 def add_season():
     """Add a new season"""
     season_name = request.form.get("season_name", "").strip()
-    age_category_size = int(request.form.get("age_category_size", 5))
+
+    try:
+        age_category_size = int(request.form.get("age_category_size", 5))
+    except ValueError:
+        flash("Invalid age category size")
+        return redirect(url_for("seasons"))
 
     if not season_name:
         flash("Season name is required")
         return redirect(url_for("seasons"))
 
+    # Validate season name for Firestore compatibility
+    if "/" in season_name:
+        flash("Season name cannot contain forward slashes (/)")
+        return redirect(url_for("seasons"))
+
+    # Check if season already exists
+    if database.get_season(season_name):
+        flash("Season already exists")
+        return redirect(url_for("seasons"))
+
     try:
         database.create_season(season_name, age_category_size)
         flash("Season added successfully!")
-    except Exception:
-        flash("Failed to add season.")
+    except Exception as e:
+        print(f"Error creating season: {e}")
+        flash(f"Failed to add season: {str(e)}")
 
     return redirect(url_for("seasons"))
 
@@ -647,6 +666,11 @@ def add_race():
 
     if not season:
         flash("Season is required")
+        return redirect(url_for("races"))
+
+    # Validate season exists
+    if not database.get_season(season):
+        flash("Selected season does not exist")
         return redirect(url_for("races"))
 
     try:

@@ -13,6 +13,8 @@ This document describes the Firestore data model used in this application.
   - `date_of_birth` (string, ISO date format, e.g., "1990-01-01")
   - `club` (string, references the club document ID — the club name)
   - `gender` (enum: "M", "F")
+  - `created_at` (timestamp, when participant was first added)
+  - `updated_at` (timestamp, when participant was last modified)
 
 **Example:**
 ```
@@ -22,7 +24,9 @@ This document describes the Firestore data model used in this application.
   "last_name": "Doe",
   "date_of_birth": "1990-01-01",
   "club": "Romsey Road Runners",
-  "gender": "F"
+  "gender": "F",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-20T14:45:00Z"
 }
 ```
 

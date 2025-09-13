@@ -107,10 +107,8 @@ def add_club(club_name, short_names=None):
     return db.collection("clubs").document(club_name).set(club_data)
 
 
-def validate_and_normalize_club(club_input):
-    """Validate club name and return full name if valid"""
-    clubs = get_clubs()
-
+def validate_and_normalize_club(club_input, clubs):
+    """Validate club name using clubs list"""
     for club in clubs:
         # Check exact match with full name
         if club["name"] == club_input:
@@ -130,11 +128,18 @@ def participant_exists(barcode):
 
 def create_participant(barcode, data):
     """Create new participant using barcode as document ID"""
+    from datetime import datetime
+
+    data["created_at"] = datetime.now()
+    data["updated_at"] = datetime.now()
     return db.collection("participants").document(barcode).set(data)
 
 
 def update_participant(barcode, data):
     """Update existing participant"""
+    from datetime import datetime
+
+    data["updated_at"] = datetime.now()
     return db.collection("participants").document(barcode).update(data)
 
 
@@ -161,7 +166,10 @@ def get_participant(barcode):
 
 def process_participants_batch(new_participants, updated_participants):
     """Process new and updated participants in batch"""
+    from datetime import datetime
+
     batch_size = 500
+    now = datetime.now()
 
     # Process new participants
     for i in range(0, len(new_participants), batch_size):
@@ -169,6 +177,8 @@ def process_participants_batch(new_participants, updated_participants):
         chunk = new_participants[i : i + batch_size]
         for participant in chunk:
             barcode = participant.pop("barcode")  # Remove barcode from data
+            participant["created_at"] = now
+            participant["updated_at"] = now
             doc_ref = db.collection("participants").document(barcode)
             batch.set(doc_ref, participant)
         batch.commit()
@@ -178,6 +188,7 @@ def process_participants_batch(new_participants, updated_participants):
         batch = db.batch()
         chunk = updated_participants[i : i + batch_size]
         for barcode, data in chunk:
+            data["updated_at"] = now
             doc_ref = db.collection("participants").document(barcode)
             batch.update(doc_ref, data)
         batch.commit()

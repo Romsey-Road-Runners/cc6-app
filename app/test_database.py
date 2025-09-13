@@ -248,6 +248,24 @@ class TestDatabase(unittest.TestCase):
 
         mock_db.collection.assert_called_with("season")
 
+    def test_validate_and_normalize_club(self):
+        clubs = [
+            {"name": "Test Club", "short_names": ["TC", "Test"]},
+            {"name": "Another Club", "short_names": ["AC"]},
+        ]
+
+        # Test exact match
+        result = database.validate_and_normalize_club("Test Club", clubs)
+        self.assertEqual(result, "Test Club")
+
+        # Test short name match
+        result = database.validate_and_normalize_club("TC", clubs)
+        self.assertEqual(result, "Test Club")
+
+        # Test no match
+        result = database.validate_and_normalize_club("Unknown Club", clubs)
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()

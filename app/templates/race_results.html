@@ -84,16 +84,16 @@
         </thead>
         <tbody>
             {% for result in results %}
-            <tr data-id="{{ result.id }}">
-                <td>{{ result.position }}</td>
-                <td>{{ result.barcode }}</td>
-                <td>{{ result.participant_name or '-' }}</td>
-                <td>{{ result.gender or '-' }}</td>
-                <td>{{ result.age_category or '-' }}</td>
-                <td>{{ result.club or '-' }}</td>
+            <tr data-id="{{ result.finish_token }}">
+                <td>{{ result.finish_token }}</td>
+                <td>{{ result.participant.parkrun_barcode_id or '-' }}</td>
+                <td>{{ (result.participant.first_name + ' ' + result.participant.last_name) if result.participant.first_name else '-' }}</td>
+                <td>{{ result.participant.gender or '-' }}</td>
+                <td>{{ result.participant.age_category or '-' }}</td>
+                <td>{{ result.participant.club or '-' }}</td>
                 <td>
-                    <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'up')" title="Move up">↑</button>
-                    <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'down')" title="Move down">↓</button>
+                    <button class="arrow-btn" onclick="moveResult('{{ result.finish_token }}', 'up')" title="Move up">↑</button>
+                    <button class="arrow-btn" onclick="moveResult('{{ result.finish_token }}', 'down')" title="Move down">↓</button>
                     <form method="POST" action="{{ url_for('delete_race_result', season_name=season, race_name=race_name, finish_token=result.finish_token) }}" style="display: inline;">
                         <button type="submit" class="delete-btn" onclick="return confirm('Delete this result?')">×</button>
                     </form>
