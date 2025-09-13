@@ -86,9 +86,23 @@ This document describes the Firestore data model used in this application.
     "first_name": "Jane",
     "last_name": "Doe",
     "gender": "F",
-    "age_category": "F40-44",
+    "age_category": "V40",
     "club": "Romsey Road Runners"
   }
+}
+```
+
+---
+
+## admin_emails (collection)
+
+- **Document ID:** email address (string, unique)
+- **Fields:** (none - the email is stored as the document ID)
+
+**Example:**
+```
+{
+  "id": "admin@example.com"
 }
 ```
 

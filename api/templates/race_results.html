@@ -26,6 +26,7 @@
         <div>
             <h4>Upload CSV Results</h4>
             <form method="POST" action="{{ url_for('process_upload_results') }}" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: end;">
+                <input type="hidden" name="season_name" value="{{ season }}">
                 <input type="hidden" name="race_name" value="{{ race_name }}">
                 <div>
                     <label for="file">CSV File:</label><br>
@@ -38,6 +39,7 @@
         <div>
             <h4>Add Manual Result</h4>
             <form method="POST" action="{{ url_for('add_manual_result') }}" style="display: flex; gap: 10px; align-items: end;">
+                <input type="hidden" name="season_name" value="{{ season }}">
                 <input type="hidden" name="race_name" value="{{ race_name }}">
                 <div>
                     <label for="participant_search">Participant:</label><br>
@@ -54,7 +56,7 @@
         </div>
         
         <div>
-            <form method="POST" action="{{ url_for('delete_all_race_results', race_name=race_name) }}">
+            <form method="POST" action="{{ url_for('delete_all_race_results', season_name=season, race_name=race_name) }}">
                 <h4>Danger Zone</h4>
                 <button type="submit" onclick="return confirm('Delete ALL results for this race? This cannot be undone!')" style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; cursor: pointer;">Delete All Results</button>
             </form>
@@ -92,7 +94,7 @@
                 <td>
                     <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'up')" title="Move up">↑</button>
                     <button class="arrow-btn" onclick="moveResult('{{ result.id }}', 'down')" title="Move down">↓</button>
-                    <form method="POST" action="{{ url_for('delete_race_result', result_id=result.id) }}" style="display: inline;">
+                    <form method="POST" action="{{ url_for('delete_race_result', season_name=season, race_name=race_name, finish_token=result.finish_token) }}" style="display: inline;">
                         <button type="submit" class="delete-btn" onclick="return confirm('Delete this result?')">×</button>
                     </form>
                 </td>

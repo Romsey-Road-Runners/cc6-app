@@ -32,12 +32,12 @@
             <label>Age Categories:</label>
             <div class="radio-group">
                 <label class="radio-label">
-                    <input type="radio" name="age_category_type" value="10_year" required>
-                    10 Year Categories (Senior, V40, V50, V60, V70, V80)
+                    <input type="radio" name="age_category_size" value="5" required>
+                    5 Year Categories (Senior, V40, V45, V50, V55, V60, V65, V70, V75, V80)
                 </label>
                 <label class="radio-label">
-                    <input type="radio" name="age_category_type" value="5_year" required>
-                    5 Year Categories (Senior, V40, V45, V50, V55, V60, V65, V70, V75, V80)
+                    <input type="radio" name="age_category_size" value="10" required>
+                    10 Year Categories (Senior, V40, V50, V60, V70, V80)
                 </label>
             </div>
         </div>
@@ -58,7 +58,10 @@
                 <td>{{ season.name }}</td>
                 <td>{{ season.age_category_size }} Year Categories</td>
                 <td>
-                    <a href="{{ url_for('edit_season', season_id=season.id) }}">Edit</a>
+                    <a href="{{ url_for('edit_season', season_name=season.name) }}">Edit</a> |
+                    <form method="POST" action="{{ url_for('delete_season', season_name=season.name) }}" style="display: inline;">
+                        <button type="submit" onclick="return confirm('Delete this season?')" style="background: none; border: none; color: red; cursor: pointer;">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}

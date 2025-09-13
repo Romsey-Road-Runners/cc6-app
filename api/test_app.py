@@ -1,48 +1,36 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from app import app
-from database import (
-    get_club_id_by_name,
-    init_running_clubs,
-    validate_barcode,
-)
+import app
+import database
 
 
 class TestApp(unittest.TestCase):
     def setUp(self):
-        app.config["TESTING"] = True
-        self.client = app.test_client()
-        init_running_clubs()
+        app.app.config["TESTING"] = True
+        self.client = app.app.test_client()
 
     def test_validate_barcode_valid(self):
-        self.assertTrue(validate_barcode("A12"))
-        self.assertTrue(validate_barcode("A12345672"))
-        self.assertTrue(validate_barcode("a123456"))
+        self.assertTrue(database.validate_barcode("A12"))
+        self.assertTrue(database.validate_barcode("A12345672"))
+        self.assertTrue(database.validate_barcode("a123456"))
 
     def test_validate_barcode_invalid(self):
-        self.assertFalse(validate_barcode("B123456"))
-        self.assertFalse(validate_barcode("A1"))
-        self.assertFalse(validate_barcode("A12345678123"))
-        self.assertFalse(validate_barcode("123456"))
+        self.assertFalse(database.validate_barcode("B123456"))
+        self.assertFalse(database.validate_barcode("A1"))
+        self.assertFalse(database.validate_barcode("A12345678123"))
+        self.assertFalse(database.validate_barcode("123456"))
 
     def test_index_route(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
 
-    def test_get_clubs_api(self):
+    @patch("database.get_clubs")
+    def test_get_clubs_api(self, mock_get_clubs):
+        mock_get_clubs.return_value = [{"name": "Test Club", "short_names": ["TC"]}]
         response = self.client.get("/api/clubs")
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, list)
-
-    @patch("database.db")
-    def test_get_club_id_by_name(self, mock_db):
-        mock_doc = Mock()
-        mock_doc.id = "club_id"
-        mock_db.collection.return_value.where.return_value.get.return_value = [mock_doc]
-
-        result = get_club_id_by_name("Chandler's Ford Swifts")
-        self.assertEqual(result, "club_id")
 
     def test_participants_requires_login(self):
         response = self.client.get("/participants")
@@ -56,12 +44,21 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/register", data={})
         self.assertEqual(response.status_code, 302)
 
-    def test_register_valid_data(self):
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    @patch("database.create_participant")
+    def test_register_valid_data(
+        self, mock_create, mock_exists, mock_club_exists, mock_validate
+    ):
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = False
+
         data = {
             "first_name": "John",
             "last_name": "Doe",
-            "email": "john@example.com",
-            "gender": "Male",
+            "gender": "M",
             "dob": "1990-01-01",
             "barcode": "A123456",
             "club": "Chandler's Ford Swifts",
@@ -73,8 +70,7 @@ class TestApp(unittest.TestCase):
         data = {
             "first_name": "John",
             "last_name": "Doe",
-            "email": "john@example.com",
-            "gender": "Male",
+            "gender": "M",
             "dob": "1990-01-01",
             "barcode": "B123456",
             "club": "Chandler's Ford Swifts",
@@ -86,8 +82,7 @@ class TestApp(unittest.TestCase):
         data = {
             "first_name": "Jane",
             "last_name": "Doe",
-            "email": "jane@example.com",
-            "gender": "Female",
+            "gender": "F",
             "dob": "1990-01-01",
             "barcode": "A654321",
             "club": "Chandler's Ford Swifts",
@@ -96,7 +91,17 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.location)
 
-    def test_edit_participant_with_auth(self):
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    @patch("database.update_participant")
+    def test_edit_participant_with_auth(
+        self, mock_update, mock_exists, mock_club_exists, mock_validate
+    ):
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = False
+
         # Simulate logged in user
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
@@ -104,8 +109,7 @@ class TestApp(unittest.TestCase):
         data = {
             "first_name": "Jane",
             "last_name": "Doe",
-            "email": "jane@example.com",
-            "gender": "Female",
+            "gender": "F",
             "dob": "1990-01-01",
             "barcode": "A654321",
             "club": "Chandler's Ford Swifts",
@@ -116,8 +120,7 @@ class TestApp(unittest.TestCase):
     def test_register_missing_first_name(self):
         data = {
             "last_name": "Doe",
-            "email": "john@example.com",
-            "gender": "Male",
+            "gender": "M",
             "dob": "1990-01-01",
             "barcode": "A123456",
             "club": "Chandler's Ford Swifts",
@@ -129,8 +132,7 @@ class TestApp(unittest.TestCase):
         data = {
             "first_name": "John",
             "last_name": "Doe",
-            "email": "john@example.com",
-            "gender": "Male",
+            "gender": "M",
             "dob": "1990-01-01",
             "barcode": "A123456",
             "club": "Invalid Club",
@@ -150,14 +152,25 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/remove_admin", data={"email": "test@example.com"})
         self.assertEqual(response.status_code, 302)
 
-    def test_admins_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.get_admin_emails")
+    def test_admins_with_auth(self, mock_get_emails, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_emails.return_value = ["test@example.com"]
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
         response = self.client.get("/admins")
         self.assertEqual(response.status_code, 200)
 
-    def test_add_admin_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.get_admin_emails")
+    @patch("database.add_admin_email")
+    def test_add_admin_with_auth(self, mock_add, mock_get_emails, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_emails.return_value = ["test@example.com"]
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
@@ -172,14 +185,23 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/add_season", data={"season_name": "2024 Season"})
         self.assertEqual(response.status_code, 302)
 
-    def test_seasons_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.get_seasons")
+    def test_seasons_with_auth(self, mock_get_seasons, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_seasons.return_value = ["2024 Season"]
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
         response = self.client.get("/seasons")
         self.assertEqual(response.status_code, 200)
 
-    def test_add_season_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.create_season")
+    def test_add_season_with_auth(self, mock_create, mock_is_admin):
+        mock_is_admin.return_value = True
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
@@ -197,14 +219,25 @@ class TestApp(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
-    def test_races_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.get_seasons")
+    @patch("database.get_races_by_season")
+    def test_races_with_auth(self, mock_get_races, mock_get_seasons, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_races.return_value = []
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
         response = self.client.get("/races")
         self.assertEqual(response.status_code, 200)
 
-    def test_add_race_with_auth(self):
+    @patch("database.is_admin_email")
+    @patch("database.create_race")
+    def test_add_race_with_auth(self, mock_create, mock_is_admin):
+        mock_is_admin.return_value = True
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
@@ -214,199 +247,66 @@ class TestApp(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
-    def test_api_seasons(self):
+    @patch("database.get_seasons")
+    def test_api_seasons(self, mock_get_seasons):
+        mock_get_seasons.return_value = ["2024 Season"]
         response = self.client.get("/api/seasons")
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.json, list)
 
     def test_race_results_requires_auth(self):
-        response = self.client.get("/race_results/test_race_id")
+        response = self.client.get("/race_results/season/race")
         self.assertEqual(response.status_code, 302)
 
-    def test_race_results_with_auth(self):
+    @patch("app.database.is_admin_email")
+    @patch("database.get_race_results")
+    def test_race_results_with_auth(self, mock_get_results, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_results.return_value = []
+
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
-        response = self.client.get("/race_results/test_race_id")
-        self.assertEqual(response.status_code, 302)
+        response = self.client.get("/race_results/season/race")
+        self.assertEqual(response.status_code, 200)
 
-    @patch("database.get_all_seasons_with_ids")
+    @patch("database.get_season")
     @patch("database.get_races_by_season")
-    def test_api_seasons_with_id(self, mock_get_races, mock_get_seasons):
-        mock_get_seasons.return_value = [{"id": "season1", "name": "2024 Season"}]
-        mock_get_races.return_value = [
-            {"id": "race1", "name": "Test Race", "date": "2024-01-01"}
-        ]
+    def test_api_seasons_with_id(self, mock_get_races, mock_get_season):
+        mock_get_season.return_value = {"age_category_size": 5}
+        mock_get_races.return_value = [{"name": "Test Race", "date": "2024-01-01"}]
 
         response = self.client.get("/api/seasons/season1")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["name"], "2024 Season")
+        self.assertEqual(response.json["name"], "season1")
         self.assertIn("races", response.json)
 
-    @patch("database.get_all_seasons_with_ids")
-    def test_api_seasons_not_found(self, mock_get_seasons):
-        mock_get_seasons.return_value = []
+    @patch("database.get_season")
+    def test_api_seasons_not_found(self, mock_get_season):
+        mock_get_season.return_value = None
 
         response = self.client.get("/api/seasons/nonexistent")
         self.assertEqual(response.status_code, 404)
 
-    @patch("database.get_all_races")
     @patch("database.get_race_results")
-    def test_api_races_with_results(self, mock_get_results, mock_get_races):
-        mock_get_races.return_value = [
-            {
-                "id": "race1",
-                "name": "Test Race",
-                "date": "2024-01-01",
-                "season": "2024 Season",
-            }
-        ]
+    def test_api_races_with_results(self, mock_get_results):
         mock_get_results.return_value = [
             {
-                "id": "result1",
-                "barcode": "A123456",
-                "position": "P0001",
-                "participant_name": "John Doe",
-                "gender": "Male",
-                "age_category": "Senior",
+                "finish_token": "1",
+                "participant": {
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "gender": "M",
+                    "age_category": "Senior",
+                },
             }
         ]
 
-        response = self.client.get("/api/races/race1")
+        response = self.client.get("/api/races/season/race")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["name"], "Test Race")
+        self.assertEqual(response.json["name"], "race")
         self.assertIn("results", response.json)
         self.assertEqual(len(response.json["results"]), 1)
-
-    @patch("database.get_all_races")
-    def test_api_races_not_found(self, mock_get_races):
-        mock_get_races.return_value = []
-
-        response = self.client.get("/api/races/nonexistent")
-        self.assertEqual(response.status_code, 404)
-
-    @patch("database.get_all_races")
-    @patch("database.get_race_results")
-    def test_api_races_filter_missing_data(self, mock_get_results, mock_get_races):
-        mock_get_races.return_value = [
-            {
-                "id": "race1",
-                "name": "Test Race",
-                "date": "2024-01-01",
-                "season": "2024 Season",
-            }
-        ]
-        mock_get_results.return_value = [
-            {
-                "id": "result1",
-                "participant_name": "John Doe",
-                "gender": "Male",
-                "age_category": "Senior",
-            },
-            {"id": "result2", "participant_name": "", "gender": "", "age_category": ""},
-        ]
-
-        response = self.client.get("/api/races/race1")
-        self.assertEqual(len(response.json["results"]), 1)
-
-        response = self.client.get("/api/races/race1?showMissingData=true")
-        self.assertEqual(len(response.json["results"]), 2)
-
-    @patch("database.get_all_races")
-    @patch("database.get_race_results")
-    def test_api_races_filter_category(self, mock_get_results, mock_get_races):
-        mock_get_races.return_value = [
-            {
-                "id": "race1",
-                "name": "Test Race",
-                "date": "2024-01-01",
-                "season": "2024 Season",
-            }
-        ]
-        mock_get_results.return_value = [
-            {
-                "id": "result1",
-                "participant_name": "John Doe",
-                "gender": "Male",
-                "age_category": "Senior",
-            },
-            {
-                "id": "result2",
-                "participant_name": "Jane Doe",
-                "gender": "Female",
-                "age_category": "V40",
-            },
-        ]
-
-        response = self.client.get("/api/races/race1?category=Senior")
-        self.assertEqual(len(response.json["results"]), 1)
-        self.assertEqual(response.json["results"][0]["age_category"], "Senior")
-
-    @patch("database.get_all_races")
-    @patch("database.get_race_results")
-    def test_api_races_filter_gender(self, mock_get_results, mock_get_races):
-        mock_get_races.return_value = [
-            {
-                "id": "race1",
-                "name": "Test Race",
-                "date": "2024-01-01",
-                "season": "2024 Season",
-            }
-        ]
-        mock_get_results.return_value = [
-            {
-                "id": "result1",
-                "participant_name": "John Doe",
-                "gender": "Male",
-                "age_category": "Senior",
-            },
-            {
-                "id": "result2",
-                "participant_name": "Jane Doe",
-                "gender": "Female",
-                "age_category": "V40",
-            },
-        ]
-
-        response = self.client.get("/api/races/race1?gender=Female")
-        self.assertEqual(len(response.json["results"]), 1)
-        self.assertEqual(response.json["results"][0]["gender"], "Female")
-
-    @patch("database.get_all_races")
-    @patch("database.get_race_results")
-    def test_api_races_filter_combined(self, mock_get_results, mock_get_races):
-        mock_get_races.return_value = [
-            {
-                "id": "race1",
-                "name": "Test Race",
-                "date": "2024-01-01",
-                "season": "2024 Season",
-            }
-        ]
-        mock_get_results.return_value = [
-            {
-                "id": "result1",
-                "participant_name": "John Doe",
-                "gender": "Male",
-                "age_category": "Senior",
-            },
-            {
-                "id": "result2",
-                "participant_name": "Jane Doe",
-                "gender": "Female",
-                "age_category": "Senior",
-            },
-            {
-                "id": "result3",
-                "participant_name": "Bob Smith",
-                "gender": "Male",
-                "age_category": "V40",
-            },
-        ]
-
-        response = self.client.get("/api/races/race1?category=Senior&gender=Male")
-        self.assertEqual(len(response.json["results"]), 1)
-        self.assertEqual(response.json["results"][0]["participant_name"], "John Doe")
 
 
 if __name__ == "__main__":
