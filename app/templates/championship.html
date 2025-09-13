@@ -92,7 +92,8 @@
                     <h2>${data.gender} Championship - ${data.season}</h2>
                     <p><strong>Scoring:</strong> Top ${data.gender === 'Male' ? '4' : '3'} finishers per club per race</p>
                     <p><strong>Races included:</strong> ${data.races.length}</p>
-                    <p><i>Note: Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>
+                    <p><i><strong>Note:</strong> Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>
+                    <p><i><strong>Note:</strong> The Total Rankings column will be adjusted if a club did not organise a race (for example due to cancellation).</i></p>
                 </div>
             `;
             
@@ -103,7 +104,7 @@
                             <tr>
                                 <th>Position</th>
                                 <th>Club</th>
-                                <th>Total Points</th>
+                                <th>Total Rankings</th>
                 `;
                 
                 // Add race columns
@@ -127,8 +128,15 @@
                     
                     // Add race points
                     data.races.forEach(race => {
-                        const racePoints = club.race_points[race.name];
-                        html += `<td>${racePoints || '-'}</td>`;
+                        const raceData = club.race_points[race.name];
+                        if (raceData === 'ORG' || raceData === 'DQ') {
+                            html += `<td>${raceData}</td>`;
+                        } else if (raceData && raceData.rank) {
+                            const positions = raceData.positions.join(', ');
+                            html += `<td>${raceData.rank} (${positions} = ${raceData.points} points)</td>`;
+                        } else {
+                            html += `<td>-</td>`;
+                        }
                     });
                     
                     html += '</tr>';
