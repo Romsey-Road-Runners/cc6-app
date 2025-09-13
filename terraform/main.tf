@@ -92,7 +92,7 @@ resource "null_resource" "docker_build" {
   depends_on = [google_project_service.cloudbuild]
 
   triggers = {
-    source_hash = sha256(join("", [for f in fileset("../api", "**") : filesha256("../api/${f}")]))
+    source_hash = sha256(join("", [for f in fileset("../app", "**") : filesha256("../app/${f}")]))
   }
 }
 
@@ -129,7 +129,7 @@ resource "google_project_iam_member" "firestore_access" {
 }
 
 # Deploy Cloud Run service
-resource "google_cloud_run_service" "api_app" {
+resource "google_cloud_run_service" "app" {
   name     = "cc6-app"
   location = var.region
 
@@ -202,8 +202,8 @@ resource "google_cloud_run_service" "api_app" {
 
 # Allow unauthenticated access
 resource "google_cloud_run_service_iam_member" "public_access" {
-  service  = google_cloud_run_service.api_app.name
-  location = google_cloud_run_service.api_app.location
+  service  = google_cloud_run_service.app.name
+  location = google_cloud_run_service.app.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
@@ -211,14 +211,14 @@ resource "google_cloud_run_service_iam_member" "public_access" {
 # Custom domain mapping
 resource "google_cloud_run_domain_mapping" "custom_domain" {
   location = var.region
-  name     = "app.cc6.co.uk"
+  name     = var.domain
 
   metadata {
     namespace = var.project_id
   }
 
   spec {
-    route_name = google_cloud_run_service.api_app.name
+    route_name = google_cloud_run_service.app.name
   }
 }
 
