@@ -10,7 +10,13 @@
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-weight: bold; }
         .checkboxes { display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start; }
-        .checkbox-group { display: flex; align-items: center; gap: 5px; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; min-width: fit-content; padding: 5px 0; }
+        .checkbox-group input[type="radio"], .checkbox-group input[type="checkbox"] { margin: 0; flex-shrink: 0; width: 16px; height: 16px; }
+        .checkbox-group label { margin: 0; white-space: nowrap; cursor: pointer; font-size: 14px; line-height: 1.2; }
+        @media (max-width: 768px) {
+            .checkboxes { flex-direction: column; gap: 10px; }
+            .checkbox-group { justify-content: flex-start; }
+        }
         select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0056b3; }
@@ -100,8 +106,8 @@
                 
                 seasons.forEach(season => {
                     const option = document.createElement('option');
-                    option.value = season.id;
-                    option.textContent = season.name;
+                    option.value = season;
+                    option.textContent = season;
                     seasonSelect.appendChild(option);
                 });
             } catch (error) {
@@ -121,7 +127,7 @@
                 
                 currentRaces.forEach(race => {
                     const option = document.createElement('option');
-                    option.value = race.id;
+                    option.value = race.name;
                     option.textContent = `${race.name} (${race.date})`;
                     raceSelect.appendChild(option);
                 });
@@ -165,7 +171,8 @@
                 }
                 
                 const queryString = params.toString();
-                const url = `/api/races/${raceId}${queryString ? '?' + queryString : ''}`;
+                const seasonId = document.getElementById('seasonSelect').value;
+                const url = `/api/races/${seasonId}/${raceId}${queryString ? '?' + queryString : ''}`;
                 
                 const response = await fetch(url);
                 const raceData = await response.json();
@@ -184,10 +191,14 @@
         function displayResults(raceData) {
             const container = document.getElementById('resultsContainer');
             
+            // Get race date from currentRaces array
+            const selectedRace = currentRaces.find(race => race.name === raceData.name);
+            const raceDate = selectedRace ? selectedRace.date : 'Unknown';
+            
             let html = `
                 <div class="race-info">
                     <h2>${raceData.name}</h2>
-                    <p><strong>Date:</strong> ${raceData.date}</p>
+                    <p><strong>Date:</strong> ${raceDate}</p>
                     <p><strong>Season:</strong> ${raceData.season}</p>
                     <p><strong>Results:</strong> ${raceData.results.length} participants</p>
                 </div>
@@ -211,15 +222,16 @@
                 `;
                 
                 raceData.results.forEach((result, index) => {
+                    const participant = result.participant || {};
                     html += `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${result.position}</td>
-                            <td>${result.barcode || '-'}</td>
-                            <td>${result.participant_name || '-'}</td>
-                            <td>${result.gender || '-'}</td>
-                            <td>${result.age_category || '-'}</td>
-                            <td>${result.club || '-'}</td>
+                            <td>${result.finish_token}</td>
+                            <td>${participant.parkrun_barcode_id || '-'}</td>
+                            <td>${participant.first_name && participant.last_name ? participant.first_name + ' ' + participant.last_name : '-'}</td>
+                            <td>${participant.gender || '-'}</td>
+                            <td>${participant.age_category || '-'}</td>
+                            <td>${participant.club || '-'}</td>
                         </tr>
                     `;
                 });
