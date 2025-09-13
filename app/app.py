@@ -150,7 +150,11 @@ def get_championship_results(season_name, gender):
         organising_clubs = race.get("organising_clubs", [])
         for org_club in organising_clubs:
             if org_club not in club_points:
-                club_points[org_club] = {"total_points": 0, "total_positions": 0, "race_points": {}}
+                club_points[org_club] = {
+                    "total_points": 0,
+                    "total_positions": 0,
+                    "race_points": {},
+                }
             club_points[org_club]["race_points"][race["name"]] = "ORG"
 
         # Get all clubs that have ever participated
@@ -166,7 +170,11 @@ def get_championship_results(season_name, gender):
         # Mark all clubs as DQ for this race initially
         for club in all_clubs:
             if club not in club_points:
-                club_points[club] = {"total_points": 0, "total_positions": 0, "race_points": {}}
+                club_points[club] = {
+                    "total_points": 0,
+                    "total_positions": 0,
+                    "race_points": {},
+                }
             if club not in organising_clubs:
                 club_points[club]["race_points"][race["name"]] = "DQ"
 
@@ -179,7 +187,7 @@ def get_championship_results(season_name, gender):
 
                     club_points[club]["race_points"][race["name"]] = {
                         "points": race_points,
-                        "positions": top_positions
+                        "positions": top_positions,
                     }
                     club_points[club]["total_points"] += race_points
                     club_points[club]["total_positions"] += race_points
@@ -191,13 +199,16 @@ def get_championship_results(season_name, gender):
             race_data = data["race_points"].get(race["name"])
             if race_data and isinstance(race_data, dict) and "points" in race_data:
                 race_clubs.append((club, race_data["points"]))
-        
-        # Sort by points (lower is better) and assign rankings
+
+        # Sort by points (lower is better) and assign rankings with ties
         race_clubs.sort(key=lambda x: x[1])
-        for rank, (club, points) in enumerate(race_clubs, 1):
+        current_rank = 1
+        for i, (club, points) in enumerate(race_clubs):
+            if i > 0 and points != race_clubs[i - 1][1]:
+                current_rank = i + 1
             race_data = club_points[club]["race_points"][race["name"]]
-            race_data["rank"] = rank
-    
+            race_data["rank"] = current_rank
+
     # Calculate total rankings and separate qualified/disqualified clubs
     qualified_clubs = []
     disqualified_clubs = []
@@ -209,7 +220,7 @@ def get_championship_results(season_name, gender):
         has_activity = data["total_positions"] > 0 or any(
             v == "ORG" for v in data["race_points"].values()
         )
-        
+
         # Calculate total rankings
         total_rankings = 0
         organized_races = 0
@@ -218,7 +229,7 @@ def get_championship_results(season_name, gender):
                 total_rankings += race_data["rank"]
             elif race_data == "ORG":
                 organized_races += 1
-        
+
         # Apply adjustment for clubs that didn't organize a race
         if organized_races == 0 and total_rankings > 0:
             total_races = len(races)
