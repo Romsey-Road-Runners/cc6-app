@@ -255,6 +255,8 @@ def get_championship_results(season_name, gender):
         {
             "season": season_name,
             "gender": gender,
+            "championship_type": "team",
+            "championship_name": f"{gender} Team Championship",
             "races": races,
             "standings": standings,
         }
@@ -309,6 +311,8 @@ def get_individual_championship_results(season_name, gender):
     return jsonify({
         "season": season_name,
         "gender": gender,
+        "championship_type": "individual",
+        "championship_name": f"{gender} Individual Championship",
         "races": races,
         "standings": standings,
     })

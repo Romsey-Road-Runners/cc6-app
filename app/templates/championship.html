@@ -9,6 +9,8 @@
         .filters { margin: 20px 0; display: flex; flex-direction: column; gap: 20px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-weight: bold; }
+        .radio-group { display: flex; gap: 15px; }
+        .radio-group label { font-weight: normal; display: flex; align-items: center; gap: 5px; }
         select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0056b3; }
@@ -32,20 +34,26 @@
             </div>
             
             <div class="filter-group">
-                <label for="genderSelect">Championship:</label>
-                <select id="genderSelect">
-                    <option value="Male">Men's Team Championship</option>
-                    <option value="Female">Women's Team Championship</option>
-                    <option value="Individual-Male">Men's Individual Championship</option>
-                    <option value="Individual-Female">Women's Individual Championship</option>
-                </select>
+                <label>Gender:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="gender" value="Male" checked> Men</label>
+                    <label><input type="radio" name="gender" value="Female"> Women</label>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <label>Championship Type:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="type" value="team" checked> Team</label>
+                    <label><input type="radio" name="type" value="individual"> Individual</label>
+                </div>
             </div>
         </div>
         
         <button id="loadChampionship" disabled>Load Championship</button>
     </div>
     
-    <div id="championshipContainer" class="results-container" style="overflow-x: auto; width: calc(100vw - 40px); margin-left: calc(-50vw + 50% + 20px); text-align: center; padding: 0 20px;"></div>
+    <div id="championshipContainer" class="results-container" style="overflow-x: auto; width: calc(100vw - 40px); margin-left: calc(-50vw + 50% + 20px); text-align: center; padding: 0;"></div>
     
     <script>
         let seasons = [];
@@ -73,25 +81,22 @@
         // Load and display championship results
         async function loadChampionship() {
             const seasonId = document.getElementById('seasonSelect').value;
-            const gender = document.getElementById('genderSelect').value;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
             
-            if (!seasonId || !gender) return;
+            if (!seasonId || !gender || !type) return;
             
             const container = document.getElementById('championshipContainer');
             container.innerHTML = '<div class="loading">Loading championship results...</div>';
             
             try {
-                const isIndividual = gender.startsWith('Individual-');
-                const actualGender = isIndividual ? gender.replace('Individual-', '') : gender;
-                const endpoint = isIndividual ? `/api/individual-championship/${seasonId}/${actualGender}` : `/api/championship/${seasonId}/${gender}`;
+                const endpoint = type === 'individual' ? `/api/individual-championship/${seasonId}/${gender}` : `/api/championship/${seasonId}/${gender}`;
                 
                 const response = await fetch(endpoint);
                 const championshipData = await response.json();
-                
-                console.log('Championship data:', championshipData); // Debug log
-                
+                                
                 if (response.ok) {
-                    displayChampionship(championshipData, gender);
+                    displayChampionship(championshipData);
                 } else {
                     container.innerHTML = `<div class="error">Error: ${championshipData.error}</div>`;
                 }
@@ -101,13 +106,13 @@
         }
         
         // Display championship results
-        function displayChampionship(data, gender) {
+        function displayChampionship(data) {
             const container = document.getElementById('championshipContainer');
             
-            const isIndividual = gender.startsWith('Individual-');
+            const isIndividual = data.championship_type === 'individual';
             let html = `
                 <div class="race-info">
-                    <h2>${data.gender} Championship - ${data.season}</h2>
+                    <h2>${data.championship_name} - ${data.season}</h2>
                     <p><strong>Scoring:</strong> ${isIndividual ? 'Best 3 race results per individual' : 'Top ' + (data.gender === 'Male' ? '4' : '3') + ' finishers per club per race'}</p>
                     <p><strong>Races included:</strong> ${data.races.length}</p>
                     ${!isIndividual ? '<p><i><strong>Note:</strong> Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>' : ''}
@@ -121,7 +126,7 @@
                         <thead>
                             <tr>
                                 <th>Position</th>
-                                <th>${gender.startsWith('Individual-') ? 'Name' : 'Club'}</th>
+                                <th>${isIndividual ? 'Name' : 'Club'}</th>
                                 <th>Total Rankings</th>
                 `;
                 
@@ -138,8 +143,6 @@
                 
                 let currentPosition = 1;
                 data.standings.forEach((entry, index) => {
-                    const isIndividual = gender.startsWith('Individual-');
-                    
                     // Handle joint positions for individual championships
                     if (isIndividual && index > 0 && entry.total_points !== data.standings[index - 1].total_points) {
                         currentPosition = index + 1;
@@ -188,8 +191,17 @@
         }
         
         // Event listeners
-        document.getElementById('seasonSelect').addEventListener('change', function() {
-            document.getElementById('loadChampionship').disabled = !this.value;
+        function updateLoadButton() {
+            const seasonId = document.getElementById('seasonSelect').value;
+            document.getElementById('loadChampionship').disabled = !seasonId;
+        }
+        
+        document.getElementById('seasonSelect').addEventListener('change', updateLoadButton);
+        document.querySelectorAll('input[name="gender"]').forEach(radio => {
+            radio.addEventListener('change', updateLoadButton);
+        });
+        document.querySelectorAll('input[name="type"]').forEach(radio => {
+            radio.addEventListener('change', updateLoadButton);
         });
         
         document.getElementById('loadChampionship').addEventListener('click', loadChampionship);
