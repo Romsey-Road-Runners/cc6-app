@@ -261,6 +261,59 @@ def get_championship_results(season_name, gender):
     )
 
 
+@app.route("/api/individual-championship/<season_name>/<gender>")
+def get_individual_championship_results(season_name, gender):
+    """API endpoint to get individual championship standings"""
+    races = database.get_races_by_season(season_name)
+    if not races:
+        return jsonify({"error": "No races found for season"}), 404
+
+    participant_results = {}
+    
+    for race in races:
+        results = database.get_race_results(season_name, race["name"])
+        # Filter by gender and valid participants
+        gender_results = [
+            r for r in results 
+            if r.get("participant", {}).get("gender") == gender
+            and r.get("participant", {}).get("first_name")
+        ]
+        
+        # Store individual positions
+        for i, result in enumerate(gender_results):
+            participant = result.get("participant", {})
+            name = f"{participant.get('first_name', '')} {participant.get('last_name', '')}".strip()
+            club = participant.get("club", "")
+            
+            if name and name != " ":
+                if name not in participant_results:
+                    participant_results[name] = {"club": club, "race_positions": {}, "total": 0}
+                participant_results[name]["race_positions"][race["name"]] = i + 1
+    
+    # Calculate best 3 results for each participant
+    standings = []
+    for name, data in participant_results.items():
+        positions = list(data["race_positions"].values())
+        if len(positions) >= 3:
+            best_3 = sorted(positions)[:3]
+            total = sum(best_3)
+            standings.append({
+                "name": name,
+                "club": data["club"],
+                "total_points": total,
+                "race_positions": data["race_positions"]
+            })
+    
+    standings.sort(key=lambda x: x["total_points"])
+    
+    return jsonify({
+        "season": season_name,
+        "gender": gender,
+        "races": races,
+        "standings": standings,
+    })
+
+
 @app.route("/register", methods=["POST"])
 @app.route("/edit_participant/<participant_id>", methods=["POST"])
 def register(participant_id=None):
