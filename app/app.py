@@ -27,19 +27,20 @@ database.init_admin_emails()
 
 @app.route("/")
 def index():
+    """Championship results page (main page)"""
+    return render_template("championship.html")
+
+
+@app.route("/register")
+def register_page():
+    """Registration page"""
     return render_template("index.html")
 
 
 @app.route("/results")
 def public_results():
-    """Public results page"""
+    """Public race results page"""
     return render_template("public_results.html")
-
-
-@app.route("/championship")
-def championship():
-    """Championship results page"""
-    return render_template("championship.html")
 
 
 @app.route("/robots.txt")
@@ -335,33 +336,33 @@ def register(participant_id=None):
     # Validation
     if not first_name:
         flash("First name is required")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     if not last_name:
         flash("Last name is required")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     if not gender:
         flash("Gender is required")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     if not dob:
         flash("Date of birth is required")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     if not database.validate_barcode(barcode):
         flash("Invalid barcode format (should be A followed by 6-7 digits)")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     # Validate club exists
     if not database.club_exists(club):
         flash("Please select a valid running club")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     # Check if barcode already exists (skip check if editing same participant)
     if participant_id != barcode and database.participant_exists(barcode):
         flash("This barcode is already registered")
-        return redirect(url_for("participants" if participant_id else "index"))
+        return redirect(url_for("participants" if participant_id else "register_page"))
 
     # Save or update Firestore
     try:
@@ -383,7 +384,7 @@ def register(participant_id=None):
     except Exception:
         flash("Operation failed. Please try again.")
 
-    return redirect(url_for("participants" if participant_id else "index"))
+    return redirect(url_for("participants" if participant_id else "register_page"))
 
 
 @app.route("/login")
@@ -401,7 +402,7 @@ def auth_callback():
         return redirect(url_for("participants"))
     else:
         flash("Access denied. Unauthorized email address.")
-        return redirect(url_for("index"))
+        return redirect(url_for("register_page"))
 
 
 @app.route("/logout")
