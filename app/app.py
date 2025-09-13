@@ -785,7 +785,6 @@ def process_upload_results():
                     age_category = "Unknown"
 
                 participant_data = {
-                    "parkrun_barcode_id": barcode,
                     "first_name": participant["first_name"],
                     "last_name": participant["last_name"],
                     "gender": participant["gender"],
@@ -795,7 +794,6 @@ def process_upload_results():
             else:
                 # Unknown participant
                 participant_data = {
-                    "parkrun_barcode_id": barcode,
                     "first_name": "Unknown",
                     "last_name": "Participant",
                     "gender": "M",
@@ -853,7 +851,6 @@ def add_manual_result():
             age_category = "Unknown"
 
         participant_data = {
-            "parkrun_barcode_id": barcode,
             "first_name": participant["first_name"],
             "last_name": participant["last_name"],
             "gender": participant["gender"],

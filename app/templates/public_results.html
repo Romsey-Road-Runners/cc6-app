@@ -211,7 +211,6 @@
                             <tr>
                                 <th>Position</th>
                                 <th>Position Token</th>
-                                <th>Barcode</th>
                                 <th>Name</th>
                                 <th>Gender</th>
                                 <th>Category</th>
@@ -227,7 +226,6 @@
                         <tr>
                             <td>${index + 1}</td>
                             <td>${result.finish_token}</td>
-                            <td>${participant.parkrun_barcode_id || '-'}</td>
                             <td>${participant.first_name && participant.last_name ? participant.first_name + ' ' + participant.last_name : '-'}</td>
                             <td>${participant.gender || '-'}</td>
                             <td>${participant.age_category || '-'}</td>
