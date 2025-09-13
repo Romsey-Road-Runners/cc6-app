@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Championship Results - CC6 Race Series</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'public_nav.html' %}
+    
+    <div class="container">
+        <h1>Championship Results</h1>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="seasonSelect">Season:</label>
+                <select id="seasonSelect">
+                    <option value="">Select Season</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="genderSelect">Championship:</label>
+                <select id="genderSelect">
+                    <option value="Male">Men's Championship</option>
+                    <option value="Female">Women's Championship</option>
+                </select>
+            </div>
+        </div>
+        
+        <button id="loadChampionship" disabled>Load Championship</button>
+    </div>
+    
+    <div id="championshipContainer" class="results-container" style="overflow-x: auto; width: 100vw; margin-left: calc(-50vw + 50%); text-align: center;"></div>
+    
+    <script>
+        let seasons = [];
+        
+        // Load seasons on page load
+        async function loadSeasons() {
+            try {
+                const response = await fetch('/api/seasons');
+                seasons = await response.json();
+                
+                const seasonSelect = document.getElementById('seasonSelect');
+                seasonSelect.innerHTML = '<option value="">Select Season</option>';
+                
+                seasons.forEach(season => {
+                    const option = document.createElement('option');
+                    option.value = season;
+                    option.textContent = season;
+                    seasonSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading seasons:', error);
+            }
+        }
+        
+        // Load and display championship results
+        async function loadChampionship() {
+            const seasonId = document.getElementById('seasonSelect').value;
+            const gender = document.getElementById('genderSelect').value;
+            
+            if (!seasonId || !gender) return;
+            
+            const container = document.getElementById('championshipContainer');
+            container.innerHTML = '<div class="loading">Loading championship results...</div>';
+            
+            try {
+                const response = await fetch(`/api/championship/${seasonId}/${gender}`);
+                const championshipData = await response.json();
+                
+                if (response.ok) {
+                    displayChampionship(championshipData);
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${championshipData.error}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading championship: ${error.message}</div>`;
+            }
+        }
+        
+        // Display championship results
+        function displayChampionship(data) {
+            const container = document.getElementById('championshipContainer');
+            
+            let html = `
+                <div class="race-info">
+                    <h2>${data.gender} Championship - ${data.season}</h2>
+                    <p><strong>Scoring:</strong> Top ${data.gender === 'Male' ? '4' : '3'} finishers per club per race</p>
+                    <p><strong>Races included:</strong> ${data.races.length}</p>
+                    <p><i>Note: Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>
+                </div>
+            `;
+            
+            if (data.standings.length > 0) {
+                html += `
+                    <table style="margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Club</th>
+                                <th>Total Points</th>
+                `;
+                
+                // Add race columns
+                data.races.forEach(race => {
+                    html += `<th>${race.name}</th>`;
+                });
+                
+                html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.standings.forEach((club, index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${club.name}</td>
+                            <td><strong>${club.total_points}</strong></td>
+                    `;
+                    
+                    // Add race points
+                    data.races.forEach(race => {
+                        const racePoints = club.race_points[race.name];
+                        html += `<td>${racePoints || '-'}</td>`;
+                    });
+                    
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+            } else {
+                html += '<p>No championship results found.</p>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Event listeners
+        document.getElementById('seasonSelect').addEventListener('change', function() {
+            document.getElementById('loadChampionship').disabled = !this.value;
+        });
+        
+        document.getElementById('loadChampionship').addEventListener('click', loadChampionship);
+        
+        // Load seasons on page load
+        loadSeasons();
+    </script>
+</body>
+</html>

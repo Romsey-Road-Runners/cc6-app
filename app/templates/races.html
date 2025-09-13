@@ -41,6 +41,14 @@
             </select>
         </div>
         
+        <div class="form-group">
+            <label for="organising_clubs">Organising Clubs:</label>
+            <select id="organising_clubs" name="organising_clubs" multiple>
+                <option value="">Loading clubs...</option>
+            </select>
+            <small>Hold Ctrl/Cmd to select multiple clubs</small>
+        </div>
+        
         <button type="submit">Add Race</button>
     </form>
     
@@ -50,6 +58,7 @@
                 <th>Race Name</th>
                 <th>Date</th>
                 <th>Season</th>
+                <th>Organising Clubs</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -59,6 +68,7 @@
                 <td>{{ race.name }}</td>
                 <td>{{ race.date }}</td>
                 <td>{{ race.season }}</td>
+                <td>{{ race.organising_clubs | join(', ') if race.organising_clubs else '-' }}</td>
                 <td>
                     <a href="{{ url_for('race_results', season_name=race.season, race_name=race.name) }}" style="color: #007bff;">View Results</a>
                 </td>
@@ -84,6 +94,24 @@
             .catch(error => {
                 console.error('Error loading seasons:', error);
                 document.getElementById('season').innerHTML = '<option value="">Error loading seasons</option>';
+            });
+        
+        // Fetch clubs from API and populate dropdown
+        fetch('/api/clubs')
+            .then(response => response.json())
+            .then(clubs => {
+                const select = document.getElementById('organising_clubs');
+                select.innerHTML = '';
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.name;
+                    option.textContent = club.name;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading clubs:', error);
+                document.getElementById('organising_clubs').innerHTML = '<option value="">Error loading clubs</option>';
             });
     </script>
 </body>

@@ -36,6 +36,12 @@ def public_results():
     return render_template("public_results.html")
 
 
+@app.route("/championship")
+def championship():
+    """Championship results page"""
+    return render_template("championship.html")
+
+
 @app.route("/robots.txt")
 def robots_txt():
     return app.send_static_file("robots.txt")
@@ -108,6 +114,106 @@ def get_race_with_results(season_name, race_name):
             "season": season_name,
             "name": race_name,
             "results": results,
+        }
+    )
+
+
+@app.route("/api/championship/<season_name>/<gender>")
+def get_championship_results(season_name, gender):
+    """API endpoint to get championship standings"""
+    races = database.get_races_by_season(season_name)
+    if not races:
+        return jsonify({"error": "No races found for season"}), 404
+
+    club_points = {}
+
+    for race in races:
+        results = database.get_race_results(season_name, race["name"])
+        # Filter by gender and valid participants
+        gender_results = [
+            r
+            for r in results
+            if r.get("participant", {}).get("gender") == gender
+            and r.get("participant", {}).get("first_name")
+        ]
+
+        # Group by club and calculate points
+        club_finishers = {}
+        for i, result in enumerate(gender_results):
+            club = result.get("participant", {}).get("club")
+            if club:
+                if club not in club_finishers:
+                    club_finishers[club] = []
+                club_finishers[club].append(i + 1)  # position (1-based)
+
+        # First, add organizing clubs to club_points if they're not already there
+        organising_clubs = race.get("organising_clubs", [])
+        for org_club in organising_clubs:
+            if org_club not in club_points:
+                club_points[org_club] = {"total_points": 0, "race_points": {}}
+            club_points[org_club]["race_points"][race["name"]] = "ORG"
+
+        # Get all clubs that have ever participated
+        all_clubs = set()
+        for result in database.get_race_results(season_name, race["name"]):
+            club = result.get("participant", {}).get("club")
+            if club:
+                all_clubs.add(club)
+
+        # Calculate points for each club (top 4 men, top 3 women)
+        top_count = 4 if gender == "Male" else 3
+
+        # Mark all clubs as DQ for this race initially
+        for club in all_clubs:
+            if club not in club_points:
+                club_points[club] = {"total_points": 0, "race_points": {}}
+            if club not in organising_clubs:
+                club_points[club]["race_points"][race["name"]] = "DQ"
+
+        # Award points only to clubs with sufficient runners
+        for club, positions in club_finishers.items():
+            if club not in organising_clubs:
+                if len(positions) >= top_count:
+                    top_positions = sorted(positions)[:top_count]
+                    race_points = sum(top_positions)
+
+                    club_points[club]["race_points"][race["name"]] = race_points
+                    club_points[club]["total_points"] += race_points
+
+    # Separate qualified and disqualified clubs
+    qualified_clubs = []
+    disqualified_clubs = []
+
+    for club, data in club_points.items():
+        # Check if club has DQ in any race (disqualified)
+        has_dq = any(v == "DQ" for v in data["race_points"].values())
+        # Check if club has points or is organizing
+        has_activity = data["total_points"] > 0 or any(
+            v == "ORG" for v in data["race_points"].values()
+        )
+
+        if has_activity:
+            club_data = {
+                "name": club,
+                "total_points": data["total_points"],
+                "race_points": data["race_points"],
+            }
+            if has_dq:
+                disqualified_clubs.append(club_data)
+            else:
+                qualified_clubs.append(club_data)
+
+    qualified_clubs.sort(key=lambda x: x["total_points"])
+    disqualified_clubs.sort(key=lambda x: x["name"])
+
+    standings = qualified_clubs + disqualified_clubs
+
+    return jsonify(
+        {
+            "season": season_name,
+            "gender": gender,
+            "races": races,
+            "standings": standings,
         }
     )
 
