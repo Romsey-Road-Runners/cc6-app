@@ -16,28 +16,28 @@
     <form method="POST">
         <div class="form-group">
             <label for="first_name">First Name:</label>
-            <input type="text" id="first_name" name="first_name" value="{{ participant.to_dict().first_name }}" required>
+            <input type="text" id="first_name" name="first_name" value="{{ participant.first_name }}" required>
         </div>
         
         <div class="form-group">
             <label for="last_name">Last Name:</label>
-            <input type="text" id="last_name" name="last_name" value="{{ participant.to_dict().last_name }}" required>
+            <input type="text" id="last_name" name="last_name" value="{{ participant.last_name }}" required>
         </div>
         
         <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="{{ participant.to_dict().email }}" required>
+            <input type="email" id="email" name="email" value="{{ participant.email or '' }}">
         </div>
         
         <div class="form-group">
             <label>Gender:</label>
             <div class="radio-group">
                 <label class="radio-label">
-                    <input type="radio" name="gender" value="Male" {{ 'checked' if participant.to_dict().gender == 'Male' else '' }} required>
+                    <input type="radio" name="gender" value="Male" {{ 'checked' if participant.gender == 'Male' else '' }} required>
                     Male
                 </label>
                 <label class="radio-label">
-                    <input type="radio" name="gender" value="Female" {{ 'checked' if participant.to_dict().gender == 'Female' else '' }} required>
+                    <input type="radio" name="gender" value="Female" {{ 'checked' if participant.gender == 'Female' else '' }} required>
                     Female
                 </label>
             </div>
@@ -45,12 +45,12 @@
         
         <div class="form-group">
             <label for="dob">Date of Birth:</label>
-            <input type="date" id="dob" name="dob" value="{{ participant.to_dict().date_of_birth }}" required>
+            <input type="date" id="dob" name="dob" value="{{ participant.date_of_birth }}" required>
         </div>
         
         <div class="form-group">
             <label for="barcode">Parkrun Barcode:</label>
-            <input type="text" id="barcode" name="barcode" value="{{ participant.to_dict().barcode }}" required>
+            <input type="text" id="barcode" name="barcode" value="{{ participant.barcode }}" required>
             <small>Format: A followed by 6-7 digits</small>
         </div>
         
@@ -58,7 +58,7 @@
             <label for="club">Running Club:</label>
             <select id="club" name="club" required>
                 {% for club in clubs %}
-                <option value="{{ club }}" {{ 'selected' if participant.to_dict().club == club else '' }}>{{ club }}</option>
+                <option value="{{ club.name }}" {{ 'selected' if participant.club == club.name else '' }}>{{ club.name }}</option>
                 {% endfor %}
             </select>
         </div>
