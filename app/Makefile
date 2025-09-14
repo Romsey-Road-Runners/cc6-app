@@ -5,7 +5,7 @@ test:
 	docker compose -f docker-compose.test.yml down
 
 test-coverage:
-	pytest --cov=. --cov-report=term-missing --cov-report=html
+	pytest test_app.py test_database.py --cov=. --cov-report=term-missing --cov-report=html
 
 format:
 	black *.py

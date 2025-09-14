@@ -266,6 +266,223 @@ class TestDatabase(unittest.TestCase):
         result = database.validate_and_normalize_club("Unknown Club", clubs)
         self.assertIsNone(result)
 
+    def test_calculate_age_category(self):
+        # Test Senior category
+        self.assertEqual(database.calculate_age_category(25, "Male"), "Senior")
+        self.assertEqual(database.calculate_age_category(39, "Female"), "Senior")
+
+        # Test V40 category
+        self.assertEqual(database.calculate_age_category(40, "Male"), "V40")
+        self.assertEqual(database.calculate_age_category(44, "Female"), "V40")
+
+        # Test V45 category
+        self.assertEqual(database.calculate_age_category(45, "Male"), "V45")
+
+        # Test V80+ category
+        self.assertEqual(database.calculate_age_category(85, "Male"), "V80")
+
+        # Test with different category size
+        self.assertEqual(database.calculate_age_category(45, "Male", 10), "V40")
+        self.assertEqual(database.calculate_age_category(55, "Male", 10), "V50")
+
+    @patch("database.db")
+    @patch("database.firestore")
+    def test_get_default_season(self, mock_firestore, mock_db):
+        mock_season = Mock()
+        mock_season.id = "2024 Season"
+        mock_db.collection.return_value.where.return_value.get.return_value = [
+            mock_season
+        ]
+
+        result = database.get_default_season()
+        self.assertEqual(result, "2024 Season")
+
+        mock_db.collection.assert_called_with("season")
+        mock_firestore.FieldFilter.assert_called_with("is_default", "==", True)
+
+    @patch("database.db")
+    @patch("database.firestore")
+    def test_get_default_season_none(self, mock_firestore, mock_db):
+        mock_db.collection.return_value.where.return_value.get.return_value = []
+
+        result = database.get_default_season()
+        self.assertIsNone(result)
+
+    @patch("database.db")
+    def test_clear_default_seasons(self, mock_db):
+        mock_season = Mock()
+        mock_season.reference = Mock()
+        mock_db.collection.return_value.where.return_value.get.return_value = [
+            mock_season
+        ]
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        database.clear_default_seasons()
+
+        mock_batch.update.assert_called_with(
+            mock_season.reference, {"is_default": False}
+        )
+        mock_batch.commit.assert_called_once()
+
+    @patch("database.db")
+    def test_get_season(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.exists = True
+        mock_doc.to_dict.return_value = {"age_category_size": 5, "is_default": True}
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_doc
+        )
+
+        result = database.get_season("2024 Season")
+        self.assertEqual(result["age_category_size"], 5)
+        self.assertTrue(result["is_default"])
+
+    @patch("database.db")
+    def test_get_season_not_found(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.exists = False
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_doc
+        )
+
+        result = database.get_season("Nonexistent Season")
+        self.assertIsNone(result)
+
+    @patch("database.db")
+    def test_update_season(self, mock_db):
+        data = {"age_category_size": 10, "is_default": True}
+        database.update_season("2024 Season", data)
+
+        mock_db.collection.return_value.document.assert_called_with("2024 Season")
+        mock_db.collection.return_value.document.return_value.update.assert_called_with(
+            data
+        )
+
+    @patch("database.db")
+    def test_delete_season(self, mock_db):
+        database.delete_season("2024 Season")
+
+        mock_db.collection.return_value.document.assert_called_with("2024 Season")
+        mock_db.collection.return_value.document.return_value.delete.assert_called_once()
+
+    @patch("database.db")
+    def test_get_club(self, mock_db):
+        mock_doc = Mock()
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_doc
+        )
+
+        result = database.get_club("Test Club")
+        self.assertEqual(result, mock_doc)
+
+    @patch("database.db")
+    def test_update_club(self, mock_db):
+        data = {"short_names": ["TC", "Test"]}
+        database.update_club("Test Club", data)
+
+        mock_db.collection.return_value.document.return_value.update.assert_called_with(
+            data
+        )
+
+    @patch("database.db")
+    def test_delete_club(self, mock_db):
+        database.delete_club("Test Club")
+
+        mock_db.collection.return_value.document.return_value.delete.assert_called_once()
+
+    @patch("database.db")
+    def test_add_race_result(self, mock_db):
+        participant_data = {"first_name": "John", "last_name": "Doe"}
+        database.add_race_result("2024 Season", "Test Race", "1", participant_data)
+
+        mock_db.collection.assert_called_with("season")
+
+    @patch("database.db")
+    def test_delete_all_race_results(self, mock_db):
+        mock_result = Mock()
+        mock_result.reference = Mock()
+        mock_db.collection.return_value.document.return_value.collection.return_value.document.return_value.collection.return_value.get.return_value = [
+            mock_result
+        ]
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        database.delete_all_race_results("2024 Season", "Test Race")
+
+        mock_batch.delete.assert_called_with(mock_result.reference)
+        mock_batch.commit.assert_called_once()
+
+    @patch("database.db")
+    def test_add_race_results_batch(self, mock_db):
+        results_data = [
+            {"finish_token": "1", "participant": {"first_name": "John"}},
+            {"finish_token": "2", "participant": {"first_name": "Jane"}},
+        ]
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        database.add_race_results_batch("2024 Season", "Test Race", results_data)
+
+        self.assertEqual(mock_batch.set.call_count, 2)
+        mock_batch.commit.assert_called_once()
+
+    @patch("database.db")
+    def test_process_participants_batch(self, mock_db):
+        new_participants = [
+            {"barcode": "A123456", "first_name": "John", "last_name": "Doe"}
+        ]
+        updated_participants = [
+            ("A654321", {"first_name": "Jane", "last_name": "Smith"})
+        ]
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        database.process_participants_batch(new_participants, updated_participants)
+
+        self.assertEqual(mock_batch.set.call_count, 1)
+        self.assertEqual(mock_batch.update.call_count, 1)
+        self.assertEqual(mock_batch.commit.call_count, 2)
+
+    @patch("database.db")
+    def test_init_running_clubs_empty(self, mock_db):
+        mock_db.collection.return_value.get.return_value = []
+        mock_batch = Mock()
+        mock_db.batch.return_value = mock_batch
+
+        database.init_running_clubs()
+
+        self.assertTrue(mock_batch.set.called)
+        mock_batch.commit.assert_called_once()
+
+    @patch("database.db")
+    def test_init_running_clubs_existing(self, mock_db):
+        mock_club = Mock()
+        mock_db.collection.return_value.get.return_value = [mock_club]
+
+        database.init_running_clubs()
+
+        mock_db.batch.assert_not_called()
+
+    @patch("database.db")
+    def test_init_admin_emails_empty(self, mock_db):
+        mock_db.collection.return_value.get.return_value = []
+
+        database.init_admin_emails()
+
+        mock_db.collection.return_value.document.assert_called_with(
+            "weston.sam@gmail.com"
+        )
+
+    @patch("database.db")
+    def test_init_admin_emails_existing(self, mock_db):
+        mock_admin = Mock()
+        mock_db.collection.return_value.get.return_value = [mock_admin]
+
+        database.init_admin_emails()
+
+        mock_db.collection.return_value.document.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
