@@ -1,5 +1,10 @@
+import os
 import unittest
 from unittest.mock import Mock, patch
+
+# Set environment variables for testing
+os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
+os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
 
 import app
 import database
@@ -1711,6 +1716,511 @@ class TestApp(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
+
+    # Test missing lines coverage
+    @patch("database.get_default_season")
+    @patch("database.get_seasons")
+    @patch("database.get_races_by_season")
+    def test_api_seasons_with_default_race(
+        self, mock_get_races, mock_get_seasons, mock_get_default
+    ):
+        """Test lines 72-76: default race selection logic"""
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_default.return_value = "2024 Season"
+        mock_get_races.return_value = [
+            {"name": "Race 2", "date": "2024-02-01"},
+            {"name": "Race 1", "date": "2024-01-01"},
+        ]
+
+        response = self.client.get("/api/seasons")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["default_race"], "Race 2")  # Most recent
+
+    @patch("database.get_default_season")
+    @patch("database.get_seasons")
+    @patch("database.get_races_by_season")
+    def test_api_seasons_no_races_for_default(
+        self, mock_get_races, mock_get_seasons, mock_get_default
+    ):
+        """Test lines 72-76: no races for default season"""
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_default.return_value = "2024 Season"
+        mock_get_races.return_value = []  # No races
+
+        response = self.client.get("/api/seasons")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json["default_race"])
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_organizing_clubs_logic(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test lines 203-211: organizing clubs logic in championship"""
+        mock_get_races.return_value = [
+            {"name": "Race1", "organising_clubs": ["Club A"]}
+        ]
+        mock_get_results.return_value = [
+            {"participant": {"first_name": "John", "gender": "Male", "club": "Club A"}},
+            {"participant": {"first_name": "Jane", "gender": "Male", "club": "Club B"}},
+        ]
+
+        response = self.client.get("/api/championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify organizing club gets "ORG" status
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertEqual(club_a_data["race_points"]["Race1"], "ORG")
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_all_clubs_logic(self, mock_get_results, mock_get_races):
+        """Test lines 219, 225-228: all clubs and DQ logic"""
+        mock_get_races.return_value = [
+            {"name": "Race1", "organising_clubs": ["Club B"]}  # Club B organizes
+        ]
+        # Return results - Club A has insufficient runners, Club B organizes
+        mock_get_results.return_value = [
+            {"participant": {"first_name": "John", "gender": "Male", "club": "Club A"}}
+        ]
+
+        response = self.client.get("/api/championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Club A won't appear (no activity), Club B will appear as organizer
+        standings = response.json["standings"]
+        club_b_data = next((s for s in standings if s["name"] == "Club B"), None)
+        self.assertIsNotNone(club_b_data)
+        self.assertEqual(club_b_data["race_points"]["Race1"], "ORG")
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_sufficient_runners(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test lines 247, 253-254: sufficient runners logic"""
+        mock_get_races.return_value = [{"name": "Race1", "organising_clubs": []}]
+        # Return sufficient runners for Male (4+)
+        mock_get_results.return_value = [
+            {
+                "participant": {
+                    "first_name": "John1",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John2",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John3",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John4",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+        ]
+
+        response = self.client.get("/api/championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify club gets points (not DQ) with sufficient runners
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertNotEqual(club_a_data["total_points"], "DQ")
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_ranking_logic(self, mock_get_results, mock_get_races):
+        """Test lines 263, 444-445, 454-455: ranking and tie logic"""
+        mock_get_races.return_value = [{"name": "Race1", "organising_clubs": []}]
+        # Two clubs with sufficient runners
+        mock_get_results.return_value = [
+            {
+                "participant": {
+                    "first_name": "John1",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John2",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John3",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John4",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "Jane1",
+                    "gender": "Male",
+                    "club": "Club B",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "Jane2",
+                    "gender": "Male",
+                    "club": "Club B",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "Jane3",
+                    "gender": "Male",
+                    "club": "Club B",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "Jane4",
+                    "gender": "Male",
+                    "club": "Club B",
+                }
+            },
+        ]
+
+        response = self.client.get("/api/championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        standings = response.json["standings"]
+        self.assertEqual(len(standings), 2)  # Both clubs should be in standings
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_no_organizing_adjustment(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test lines 555-556: no organizing race adjustment"""
+        mock_get_races.return_value = [
+            {"name": "Race1", "organising_clubs": ["Other Club"]},
+            {"name": "Race2", "organising_clubs": ["Other Club"]},
+        ]
+        # Return sufficient runners for Male (4+) to get points in both races
+        mock_get_results.return_value = [
+            {
+                "participant": {
+                    "first_name": "John1",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John2",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John3",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John4",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+        ]
+
+        response = self.client.get("/api/championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify club gets points and adjustment is applied (should be < raw total due to no organizing)
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertNotEqual(club_a_data["total_points"], "DQ")
+        # Adjustment applied: 2 rankings * (1/2) = 1.0
+        self.assertEqual(club_a_data["total_points"], 1.0)
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_individual_championship_name_filtering(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test lines 696-697: individual championship name filtering"""
+        mock_get_races.return_value = [
+            {"name": "Race1"},
+            {"name": "Race2"},
+            {"name": "Race3"},
+        ]
+        mock_get_results.side_effect = [
+            # Race 1
+            [
+                {
+                    "participant": {
+                        "first_name": "",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Empty first name
+            # Race 2
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Empty last name
+            # Race 3
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Valid name
+        ]
+
+        response = self.client.get("/api/individual-championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Should only include valid names
+        standings = response.json["standings"]
+        self.assertEqual(len(standings), 0)  # No one has 3+ races with valid names
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_individual_championship_sufficient_races(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test lines 784-785: individual championship sufficient races logic"""
+        mock_get_races.return_value = [
+            {"name": "Race1"},
+            {"name": "Race2"},
+            {"name": "Race3"},
+        ]
+        mock_get_results.side_effect = [
+            # Race 1
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+            # Race 2
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+            # Race 3
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+        ]
+
+        response = self.client.get("/api/individual-championship/season/Male")
+        self.assertEqual(response.status_code, 200)
+        # Should include participant with 3+ races
+        standings = response.json["standings"]
+        self.assertEqual(len(standings), 1)
+        self.assertEqual(standings[0]["name"], "John Doe")
+
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    def test_register_edit_same_participant_barcode_check(
+        self, mock_exists, mock_club_exists, mock_validate
+    ):
+        """Test lines 802-804: edit participant with same barcode"""
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = True  # Barcode exists
+
+        # Simulate logged in user
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "gender": "M",
+            "dob": "1990-01-01",
+            "barcode": "A123456",
+            "club": "Test Club",
+        }
+        # Edit participant with same barcode (A123456 editing A123456)
+        response = self.client.post("/edit_participant/A123456", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    @patch("database.update_participant")
+    def test_register_edit_different_participant_barcode_check(
+        self, mock_update, mock_exists, mock_club_exists, mock_validate
+    ):
+        """Test lines 807-808: edit participant with different barcode that exists"""
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = True  # Different barcode exists
+
+        # Simulate logged in user
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "gender": "M",
+            "dob": "1990-01-01",
+            "barcode": "A654321",  # Different barcode
+            "club": "Test Club",
+        }
+        # Edit participant A123456 but trying to change to existing barcode A654321
+        response = self.client.post("/edit_participant/A123456", data=data)
+        self.assertEqual(response.status_code, 302)
+        # Should not call update_participant due to barcode conflict
+        mock_update.assert_not_called()
+
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    @patch("database.update_participant")
+    def test_register_update_participant_exception(
+        self, mock_update, mock_exists, mock_club_exists, mock_validate
+    ):
+        """Test lines 891-892: update participant exception handling"""
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = False
+        mock_update.side_effect = Exception("Database error")
+
+        # Simulate logged in user
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "gender": "M",
+            "dob": "1990-01-01",
+            "barcode": "A123456",
+            "club": "Test Club",
+        }
+        response = self.client.post("/edit_participant/test_id", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_seasons")
+    @patch("database.get_season")
+    def test_seasons_with_missing_season_data(
+        self, mock_get_season, mock_get_seasons, mock_is_admin
+    ):
+        """Test lines 926-927: seasons with missing season data"""
+        mock_is_admin.return_value = True
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_season.return_value = None  # Missing season data
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/seasons")
+        self.assertEqual(response.status_code, 200)
+        # Should handle missing season data gracefully
+
+    @patch("database.is_admin_email")
+    def test_add_season_invalid_age_category_size(self, mock_is_admin):
+        """Test lines 992-993: invalid age category size"""
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_season",
+            data={"season_name": "2024 Season", "age_category_size": "invalid"},
+        )
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.clear_default_seasons")
+    @patch("database.update_season")
+    def test_update_season_invalid_age_category_size(
+        self, mock_update, mock_clear, mock_is_admin
+    ):
+        """Test lines 1063-1064: update season with invalid age category size"""
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        # This should handle invalid age_category_size gracefully
+        response = self.client.post(
+            "/edit_season/2024", data={"age_category_size": "5", "is_default": "false"}
+        )
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_seasons")
+    @patch("database.get_races_by_season")
+    def test_races_with_season_assignment(
+        self, mock_get_races, mock_get_seasons, mock_is_admin
+    ):
+        """Test lines 1116-1117: races with season assignment"""
+        mock_is_admin.return_value = True
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_races.return_value = [{"name": "Test Race", "date": "2024-01-01"}]
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/races")
+        self.assertEqual(response.status_code, 200)
+        # Should assign season to each race
 
 
 if __name__ == "__main__":

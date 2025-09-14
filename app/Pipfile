@@ -9,6 +9,7 @@ google-cloud-secret-manager = "*"
 gunicorn = "*"
 Authlib = "*"
 flask = "*"
+coverage = "*"
 
 [dev-packages]
 pytest = "*"
