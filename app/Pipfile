@@ -13,6 +13,8 @@ flask = "*"
 [dev-packages]
 pytest = "*"
 black = "*"
+coverage = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.13"

@@ -99,7 +99,8 @@
         async function loadSeasons() {
             try {
                 const response = await fetch('/api/seasons');
-                seasons = await response.json();
+                const data = await response.json();
+                seasons = data.seasons;
                 
                 const seasonSelect = document.getElementById('seasonSelect');
                 seasonSelect.innerHTML = '<option value="">Select Season</option>';
@@ -108,8 +109,24 @@
                     const option = document.createElement('option');
                     option.value = season;
                     option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
                     seasonSelect.appendChild(option);
                 });
+                
+                // Auto-load races if default season is selected
+                if (data.default_season) {
+                    await loadRaces(data.default_season);
+                    
+                    // Auto-select and load most recent race
+                    if (data.default_race) {
+                        const raceSelect = document.getElementById('raceSelect');
+                        raceSelect.value = data.default_race;
+                        document.getElementById('loadResults').disabled = false;
+                        loadResults();
+                    }
+                }
             } catch (error) {
                 console.error('Error loading seasons:', error);
             }

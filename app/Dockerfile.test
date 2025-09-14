@@ -7,4 +7,4 @@ RUN pip install pipenv && pipenv install --dev --system
 
 COPY . .
 
-CMD ["python", "-m", "pytest", "test_app.py", "-v"]
+CMD ["python", "-m", "pytest", "test_app.py", "test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]

@@ -63,8 +63,25 @@ def get_participants_api():
 
 @app.route("/api/seasons")
 def get_seasons():
-    """API endpoint to get seasons with IDs"""
-    return jsonify(database.get_seasons())
+    """API endpoint to get seasons with IDs and default season"""
+    seasons = database.get_seasons()
+    default_season = database.get_default_season()
+    default_race = None
+
+    if default_season:
+        races = database.get_races_by_season(default_season)
+        if races:
+            # Sort races by date (most recent first)
+            races.sort(key=lambda x: x.get("date", ""), reverse=True)
+            default_race = races[0]["name"]
+
+    return jsonify(
+        {
+            "seasons": seasons,
+            "default_season": default_season,
+            "default_race": default_race,
+        }
+    )
 
 
 @app.route("/api/seasons/<season_name>")
@@ -272,27 +289,32 @@ def get_individual_championship_results(season_name, gender):
         return jsonify({"error": "No races found for season"}), 404
 
     participant_results = {}
-    
+
     for race in races:
         results = database.get_race_results(season_name, race["name"])
         # Filter by gender and valid participants
         gender_results = [
-            r for r in results 
+            r
+            for r in results
             if r.get("participant", {}).get("gender") == gender
             and r.get("participant", {}).get("first_name")
         ]
-        
+
         # Store individual positions
         for i, result in enumerate(gender_results):
             participant = result.get("participant", {})
             name = f"{participant.get('first_name', '')} {participant.get('last_name', '')}".strip()
             club = participant.get("club", "")
-            
+
             if name and name != " ":
                 if name not in participant_results:
-                    participant_results[name] = {"club": club, "race_positions": {}, "total": 0}
+                    participant_results[name] = {
+                        "club": club,
+                        "race_positions": {},
+                        "total": 0,
+                    }
                 participant_results[name]["race_positions"][race["name"]] = i + 1
-    
+
     # Calculate best 3 results for each participant
     standings = []
     for name, data in participant_results.items():
@@ -300,23 +322,27 @@ def get_individual_championship_results(season_name, gender):
         if len(positions) >= 3:
             best_3 = sorted(positions)[:3]
             total = sum(best_3)
-            standings.append({
-                "name": name,
-                "club": data["club"],
-                "total_points": total,
-                "race_positions": data["race_positions"]
-            })
-    
+            standings.append(
+                {
+                    "name": name,
+                    "club": data["club"],
+                    "total_points": total,
+                    "race_positions": data["race_positions"],
+                }
+            )
+
     standings.sort(key=lambda x: x["total_points"])
-    
-    return jsonify({
-        "season": season_name,
-        "gender": gender,
-        "championship_type": "individual",
-        "championship_name": f"{gender} Individual Championship",
-        "races": races,
-        "standings": standings,
-    })
+
+    return jsonify(
+        {
+            "season": season_name,
+            "gender": gender,
+            "championship_type": "individual",
+            "championship_name": f"{gender} Individual Championship",
+            "races": races,
+            "standings": standings,
+        }
+    )
 
 
 @app.route("/register", methods=["POST"])
@@ -769,6 +795,7 @@ def seasons():
 def add_season():
     """Add a new season"""
     season_name = request.form.get("season_name", "").strip()
+    is_default = request.form.get("is_default") == "true"
 
     try:
         age_category_size = int(request.form.get("age_category_size", 5))
@@ -791,7 +818,11 @@ def add_season():
         return redirect(url_for("seasons"))
 
     try:
-        database.create_season(season_name, age_category_size)
+        # If setting as default, clear other defaults first
+        if is_default:
+            database.clear_default_seasons()
+
+        database.create_season(season_name, age_category_size, is_default)
         flash("Season added successfully!")
     except Exception as e:
         print(f"Error creating season: {e}")
@@ -818,9 +849,17 @@ def edit_season(season_name):
 def update_season(season_name):
     """Update existing season"""
     age_category_size = int(request.form.get("age_category_size", 5))
+    is_default = request.form.get("is_default") == "true"
 
     try:
-        database.update_season(season_name, {"age_category_size": age_category_size})
+        # If setting as default, clear other defaults first
+        if is_default:
+            database.clear_default_seasons()
+
+        database.update_season(
+            season_name,
+            {"age_category_size": age_category_size, "is_default": is_default},
+        )
         flash("Season updated successfully!")
     except Exception:
         flash("Failed to update season.")

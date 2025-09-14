@@ -37,6 +37,12 @@
                 </label>
             </div>
         </div>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_default" value="true" {% if season and season.get('is_default') %}checked{% endif %}>
+                Set as default season
+            </label>
+        </div>
         <button type="submit">Update Season</button>
         <a href="{{ url_for('seasons') }}">Cancel</a>
     </form>

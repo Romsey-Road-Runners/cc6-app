@@ -247,12 +247,17 @@ class TestApp(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
+    @patch("database.get_default_season")
     @patch("database.get_seasons")
-    def test_api_seasons(self, mock_get_seasons):
+    def test_api_seasons(self, mock_get_seasons, mock_get_default):
         mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_default.return_value = None
         response = self.client.get("/api/seasons")
         self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json, list)
+        self.assertIsInstance(response.json, dict)
+        self.assertIn("seasons", response.json)
+        self.assertIn("default_season", response.json)
+        self.assertIn("default_race", response.json)
 
     def test_race_results_requires_auth(self):
         response = self.client.get("/race_results/season/race")

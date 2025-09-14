@@ -18,4 +18,4 @@ services:
     depends_on:
       firestore-emulator:
         condition: service_started
-    command: python -m pytest test_app.py test_database.py -v
+    command: sh -c "pip install pytest-cov coverage && python -m pytest test_app.py test_database.py -v --cov=. --cov-report=term-missing"

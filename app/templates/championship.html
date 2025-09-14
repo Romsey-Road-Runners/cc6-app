@@ -9,8 +9,12 @@
         .filters { margin: 20px 0; display: flex; flex-direction: column; gap: 20px; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-weight: bold; }
-        .radio-group { display: flex; gap: 15px; }
-        .radio-group label { font-weight: normal; display: flex; align-items: center; gap: 5px; }
+        .radio-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start; }
+        .radio-group label { font-weight: normal; display: flex; align-items: center; gap: 8px; min-width: fit-content; padding: 5px 0; cursor: pointer; font-size: 14px; line-height: 1.2; }
+        .radio-group input[type="radio"] { margin: 0; flex-shrink: 0; width: 16px; height: 16px; }
+        @media (max-width: 768px) {
+            .radio-group { flex-direction: column; gap: 10px; }
+        }
         select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background: #0056b3; }
@@ -62,7 +66,8 @@
         async function loadSeasons() {
             try {
                 const response = await fetch('/api/seasons');
-                seasons = await response.json();
+                const data = await response.json();
+                seasons = data.seasons;
                 
                 const seasonSelect = document.getElementById('seasonSelect');
                 seasonSelect.innerHTML = '<option value="">Select Season</option>';
@@ -71,8 +76,14 @@
                     const option = document.createElement('option');
                     option.value = season;
                     option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
                     seasonSelect.appendChild(option);
                 });
+                
+                // Update load button state after loading seasons
+                updateLoadButton();
             } catch (error) {
                 console.error('Error loading seasons:', error);
             }

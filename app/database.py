@@ -235,12 +235,33 @@ def get_seasons():
     return [season.id for season in seasons]
 
 
-def create_season(season_name, age_category_size=5):
+def get_default_season():
+    """Get the default season if one exists"""
+    seasons = (
+        db.collection("season")
+        .where(filter=firestore.FieldFilter("is_default", "==", True))
+        .get()
+    )
+    if seasons:
+        return seasons[0].id
+    return None
+
+
+def clear_default_seasons():
+    """Clear all default season flags"""
+    seasons = db.collection("season").where("is_default", "==", True).get()
+    batch = db.batch()
+    for season in seasons:
+        batch.update(season.reference, {"is_default": False})
+    batch.commit()
+
+
+def create_season(season_name, age_category_size=5, is_default=False):
     """Create new season"""
     return (
         db.collection("season")
         .document(season_name)
-        .set({"age_category_size": age_category_size})
+        .set({"age_category_size": age_category_size, "is_default": is_default})
     )
 
 

@@ -81,10 +81,10 @@
         // Fetch seasons from API and populate dropdown
         fetch('/api/seasons')
             .then(response => response.json())
-            .then(seasons => {
+            .then(data => {
                 const select = document.getElementById('season');
                 select.innerHTML = '<option value="">Select a season</option>';
-                seasons.forEach(season => {
+                data.seasons.forEach(season => {
                     const option = document.createElement('option');
                     option.value = season;
                     option.textContent = season;
