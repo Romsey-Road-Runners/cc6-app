@@ -213,6 +213,28 @@ class TestApp(unittest.TestCase):
         response = self.client.post("/add_season", data={"season_name": "2024 Season"})
         self.assertEqual(response.status_code, 302)
 
+    @patch("database.is_admin_email")
+    @patch("database.create_season")
+    def test_add_season_with_start_date(self, mock_create, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_season",
+            data={"season_name": "2024 Season", "start_date": "2024-01-01"},
+        )
+        self.assertEqual(response.status_code, 302)
+        mock_create.assert_called_once()
+        # Verify start_date was passed to create_season
+        call_args = mock_create.call_args
+        # Check if start_date is in kwargs or if it's the 4th positional argument
+        if "start_date" in call_args.kwargs:
+            self.assertEqual(call_args.kwargs["start_date"], "2024-01-01")
+        elif len(call_args.args) >= 4:
+            self.assertEqual(call_args.args[3], "2024-01-01")
+
     def test_races_requires_auth(self):
         response = self.client.get("/races")
         self.assertEqual(response.status_code, 302)
@@ -601,6 +623,22 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     @patch("database.is_admin_email")
+    @patch("database.get_season")
+    def test_edit_season_get_with_start_date(self, mock_get_season, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_season.return_value = {
+            "age_category_size": 5,
+            "start_date": "2024-01-01",
+            "is_default": False,
+        }
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/edit_season/2024")
+        self.assertEqual(response.status_code, 200)
+
+    @patch("database.is_admin_email")
     @patch("database.clear_default_seasons")
     @patch("database.update_season")
     def test_update_season_with_auth(self, mock_update, mock_clear, mock_is_admin):
@@ -615,6 +653,27 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         mock_clear.assert_called_once()
         mock_update.assert_called_once()
+
+    @patch("database.is_admin_email")
+    @patch("database.update_season")
+    def test_update_season_with_start_date(self, mock_update, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/edit_season/2024",
+            data={
+                "age_category_size": "5",
+                "start_date": "2024-01-15",
+                "is_default": "false",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        # Verify start_date was included in update data
+        call_args = mock_update.call_args[0][1]
+        self.assertEqual(call_args["start_date"], "2024-01-15")
 
     @patch("database.is_admin_email")
     @patch("database.delete_season")
@@ -1127,6 +1186,27 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
 
     @patch("database.is_admin_email")
+    @patch("database.create_season")
+    def test_add_season_with_empty_start_date(self, mock_create, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_season",
+            data={"season_name": "2024 Season", "start_date": ""},  # Empty start date
+        )
+        self.assertEqual(response.status_code, 302)
+        # Verify empty start_date is passed (may be positional or keyword)
+        call_args = mock_create.call_args
+        # Check if start_date is in kwargs or if it's the 4th positional argument
+        if "start_date" in call_args.kwargs:
+            self.assertEqual(call_args.kwargs["start_date"], "")
+        elif len(call_args.args) >= 4:
+            self.assertEqual(call_args.args[3], "")
+
+    @patch("database.is_admin_email")
     @patch("database.update_season")
     def test_update_season_exception(self, mock_update, mock_is_admin):
         mock_is_admin.return_value = True
@@ -1139,6 +1219,27 @@ class TestApp(unittest.TestCase):
             "/edit_season/2024", data={"age_category_size": "5"}
         )
         self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.update_season")
+    def test_update_season_with_whitespace_start_date(self, mock_update, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/edit_season/2024",
+            data={
+                "age_category_size": "5",
+                "start_date": "  2024-01-01  ",  # Whitespace around date
+                "is_default": "false",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        # Verify start_date whitespace is stripped
+        call_args = mock_update.call_args[0][1]
+        self.assertEqual(call_args["start_date"], "2024-01-01")
 
     @patch("database.is_admin_email")
     @patch("database.delete_season")

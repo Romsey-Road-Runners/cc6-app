@@ -795,6 +795,7 @@ def seasons():
 def add_season():
     """Add a new season"""
     season_name = request.form.get("season_name", "").strip()
+    start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
 
     try:
@@ -822,7 +823,7 @@ def add_season():
         if is_default:
             database.clear_default_seasons()
 
-        database.create_season(season_name, age_category_size, is_default)
+        database.create_season(season_name, age_category_size, is_default, start_date)
         flash("Season added successfully!")
     except Exception as e:
         print(f"Error creating season: {e}")
@@ -849,6 +850,7 @@ def edit_season(season_name):
 def update_season(season_name):
     """Update existing season"""
     age_category_size = int(request.form.get("age_category_size", 5))
+    start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
 
     try:
@@ -858,7 +860,11 @@ def update_season(season_name):
 
         database.update_season(
             season_name,
-            {"age_category_size": age_category_size, "is_default": is_default},
+            {
+                "age_category_size": age_category_size,
+                "start_date": start_date,
+                "is_default": is_default,
+            },
         )
         flash("Season updated successfully!")
     except Exception:

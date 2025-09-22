@@ -202,6 +202,35 @@ class TestDatabase(unittest.TestCase):
         mock_db.collection.return_value.document.assert_called_with(season_name)
 
     @patch("database.db")
+    def test_create_season_with_start_date(self, mock_db):
+        season_name = "2024 Season"
+        age_category_size = 5
+        start_date = "2024-01-01"
+        database.create_season(season_name, age_category_size, start_date=start_date)
+
+        mock_db.collection.assert_called_with("season")
+        mock_db.collection.return_value.document.assert_called_with(season_name)
+        # Verify start_date is included in the set call
+        call_args = mock_db.collection.return_value.document.return_value.set.call_args[
+            0
+        ][0]
+        self.assertEqual(call_args["start_date"], start_date)
+
+    @patch("database.db")
+    def test_create_season_with_empty_start_date(self, mock_db):
+        season_name = "2024 Season"
+        age_category_size = 5
+        start_date = ""
+        database.create_season(season_name, age_category_size, start_date=start_date)
+
+        mock_db.collection.assert_called_with("season")
+        # Verify empty start_date is not included (since empty string is falsy)
+        call_args = mock_db.collection.return_value.document.return_value.set.call_args[
+            0
+        ][0]
+        self.assertNotIn("start_date", call_args)
+
+    @patch("database.db")
     def test_create_race(self, mock_db):
         database.create_race("2024 Season", "Test Race", {"date": "2024-01-01"})
 
@@ -339,6 +368,24 @@ class TestDatabase(unittest.TestCase):
         self.assertTrue(result["is_default"])
 
     @patch("database.db")
+    def test_get_season_with_start_date(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.exists = True
+        mock_doc.to_dict.return_value = {
+            "age_category_size": 5,
+            "is_default": False,
+            "start_date": "2024-01-01",
+        }
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_doc
+        )
+
+        result = database.get_season("2024 Season")
+        self.assertEqual(result["age_category_size"], 5)
+        self.assertFalse(result["is_default"])
+        self.assertEqual(result["start_date"], "2024-01-01")
+
+    @patch("database.db")
     def test_get_season_not_found(self, mock_db):
         mock_doc = Mock()
         mock_doc.exists = False
@@ -358,6 +405,25 @@ class TestDatabase(unittest.TestCase):
         mock_db.collection.return_value.document.return_value.update.assert_called_with(
             data
         )
+
+    @patch("database.db")
+    def test_update_season_with_start_date(self, mock_db):
+        data = {
+            "age_category_size": 10,
+            "is_default": False,
+            "start_date": "2024-01-15",
+        }
+        database.update_season("2024 Season", data)
+
+        mock_db.collection.return_value.document.assert_called_with("2024 Season")
+        mock_db.collection.return_value.document.return_value.update.assert_called_with(
+            data
+        )
+        # Verify start_date is included in update data
+        call_args = (
+            mock_db.collection.return_value.document.return_value.update.call_args[0][0]
+        )
+        self.assertEqual(call_args["start_date"], "2024-01-15")
 
     @patch("database.db")
     def test_delete_season(self, mock_db):

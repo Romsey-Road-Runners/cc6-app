@@ -29,6 +29,10 @@
             <input type="text" id="season_name" name="season_name" placeholder="Enter season name" required>
         </div>
         <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date">
+        </div>
+        <div class="form-group">
             <label>Age Categories:</label>
             <div class="radio-group">
                 <label class="radio-label">
@@ -54,6 +58,7 @@
         <thead>
             <tr>
                 <th>Season Name</th>
+                <th>Start Date</th>
                 <th>Age Categories</th>
                 <th>Default</th>
                 <th>Actions</th>
@@ -63,6 +68,7 @@
             {% for season in seasons %}
             <tr>
                 <td>{{ season.name }}</td>
+                <td>{{ season.get('start_date', '') }}</td>
                 <td>{{ season.age_category_size }} Year Categories</td>
                 <td>{{ '✓' if season.get('is_default') else '' }}</td>
                 <td>

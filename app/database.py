@@ -256,13 +256,12 @@ def clear_default_seasons():
     batch.commit()
 
 
-def create_season(season_name, age_category_size=5, is_default=False):
+def create_season(season_name, age_category_size=5, is_default=False, start_date=None):
     """Create new season"""
-    return (
-        db.collection("season")
-        .document(season_name)
-        .set({"age_category_size": age_category_size, "is_default": is_default})
-    )
+    data = {"age_category_size": age_category_size, "is_default": is_default}
+    if start_date:
+        data["start_date"] = start_date
+    return db.collection("season").document(season_name).set(data)
 
 
 def get_season(season_name):

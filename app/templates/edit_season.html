@@ -25,6 +25,10 @@
     
     <form method="POST" action="{{ url_for('update_season', season_name=season_name) }}">
         <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ season.get('start_date', '') if season else '' }}">
+        </div>
+        <div class="form-group">
             <label>Age Categories:</label>
             <div class="radio-group">
                 <label class="radio-label">
