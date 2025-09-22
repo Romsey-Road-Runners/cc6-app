@@ -1001,7 +1001,14 @@ def process_upload_results():
     try:
         import csv
         import io
-        from datetime import datetime
+
+        # Get season data once for age calculation
+        season_data = database.get_season(season_name)
+        season_start_date = season_data.get("start_date") if season_data else None
+
+        if not season_start_date:
+            flash("Season start date is required for results upload")
+            return redirect(request.referrer or url_for("races"))
 
         content = file.read().decode("utf-8-sig")  # Handle BOM
         csv_reader = csv.reader(io.StringIO(content))
@@ -1009,6 +1016,8 @@ def process_upload_results():
         results_data = []
         seen_tokens = set()
         duplicates = []
+        invalid_barcodes = 0
+        invalid_tokens = 0
         row_count = 0
 
         for row in csv_reader:
@@ -1022,6 +1031,15 @@ def process_upload_results():
             if not finish_token:
                 continue
 
+            # Validate barcode and position token formats
+            if not database.validate_barcode(barcode):
+                invalid_barcodes += 1
+                continue
+
+            if not database.validate_position_token(finish_token):
+                invalid_tokens += 1
+                continue
+
             if finish_token in seen_tokens:
                 duplicates.append(finish_token)
                 continue
@@ -1031,12 +1049,12 @@ def process_upload_results():
             # Get participant data
             participant = database.get_participant(barcode)
             if participant:
-                # Calculate age at race time (simplified - using current age)
+                # Calculate age category using season start date
                 try:
-                    dob = datetime.strptime(participant["date_of_birth"], "%Y-%m-%d")
-                    age = datetime.now().year - dob.year
                     age_category = database.calculate_age_category(
-                        age, participant["gender"]
+                        season_start_date,
+                        participant["date_of_birth"],
+                        season_data.get("age_category_size", 5),
                     )
                 except Exception:
                     age_category = "Unknown"
@@ -1065,6 +1083,10 @@ def process_upload_results():
         message = f"Uploaded {len(results_data)} results successfully!"
         if duplicates:
             message += f" Warning: {len(duplicates)} duplicate finish tokens were skipped: {', '.join(duplicates)}."
+        if invalid_barcodes > 0:
+            message += f" Skipped {invalid_barcodes} rows with invalid barcodes."
+        if invalid_tokens > 0:
+            message += f" Skipped {invalid_tokens} rows with invalid position tokens."
 
         flash(message)
 
@@ -1098,6 +1120,16 @@ def add_manual_result():
         flash(f"Missing required fields: {', '.join(missing_fields)}")
         return redirect(request.referrer or url_for("races"))
 
+    # Validate barcode format
+    if not database.validate_barcode(barcode):
+        flash("Invalid barcode format")
+        return redirect(request.referrer or url_for("races"))
+
+    # Validate position token format
+    if not database.validate_position_token(position_token):
+        flash("Position token must be P followed by 1-4 digits (e.g., P1, P123)")
+        return redirect(request.referrer or url_for("races"))
+
     try:
         # Get participant data
         participant = database.get_participant(barcode)
@@ -1105,13 +1137,21 @@ def add_manual_result():
             flash("Participant not found")
             return redirect(request.referrer or url_for("races"))
 
-        # Calculate age category
-        try:
-            from datetime import datetime
+        # Get season data for age calculation
+        season_data = database.get_season(season_name)
+        season_start_date = season_data.get("start_date") if season_data else None
 
-            dob = datetime.strptime(participant["date_of_birth"], "%Y-%m-%d")
-            age = datetime.now().year - dob.year
-            age_category = database.calculate_age_category(age, participant["gender"])
+        if not season_start_date:
+            flash("Season start date is required for results upload")
+            return redirect(request.referrer or url_for("races"))
+
+        # Calculate age category using season start date
+        try:
+            age_category = database.calculate_age_category(
+                season_start_date,
+                participant["date_of_birth"],
+                season_data.get("age_category_size", 5),
+            )
         except Exception:
             age_category = "Unknown"
 

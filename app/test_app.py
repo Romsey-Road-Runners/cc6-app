@@ -814,12 +814,14 @@ class TestApp(unittest.TestCase):
             self.assertNotIn("user", sess)
 
     @patch("database.is_admin_email")
+    @patch("database.get_season")
     @patch("database.get_participant")
     @patch("database.add_race_result")
     def test_add_manual_result_success(
-        self, mock_add_result, mock_get_participant, mock_is_admin
+        self, mock_add_result, mock_get_participant, mock_get_season, mock_is_admin
     ):
         mock_is_admin.return_value = True
+        mock_get_season.return_value = {"start_date": "2024-01-01"}
         mock_get_participant.return_value = {
             "first_name": "John",
             "last_name": "Doe",
@@ -837,18 +839,20 @@ class TestApp(unittest.TestCase):
                 "season_name": "2024",
                 "race_name": "Test Race",
                 "barcode": "A123456",
-                "position_token": "1",
+                "position_token": "P0001",
             },
         )
         self.assertEqual(response.status_code, 302)
         mock_add_result.assert_called_once()
 
     @patch("database.is_admin_email")
+    @patch("database.get_season")
     @patch("database.get_participant")
     def test_add_manual_result_participant_not_found(
-        self, mock_get_participant, mock_is_admin
+        self, mock_get_participant, mock_get_season, mock_is_admin
     ):
         mock_is_admin.return_value = True
+        mock_get_season.return_value = {"start_date": "2024-01-01"}
         mock_get_participant.return_value = None
 
         with self.client.session_transaction() as sess:
@@ -860,7 +864,7 @@ class TestApp(unittest.TestCase):
                 "season_name": "2024",
                 "race_name": "Test Race",
                 "barcode": "A123456",
-                "finish_token": "1",
+                "position_token": "P0001",
             },
         )
         self.assertEqual(response.status_code, 302)
@@ -946,12 +950,14 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
 
     @patch("database.is_admin_email")
+    @patch("database.get_season")
     @patch("database.get_participant")
     @patch("database.add_race_results_batch")
     def test_process_upload_results_with_file(
-        self, mock_batch, mock_get_participant, mock_is_admin
+        self, mock_batch, mock_get_participant, mock_get_season, mock_is_admin
     ):
         mock_is_admin.return_value = True
+        mock_get_season.return_value = {"start_date": "2024-01-01"}
         mock_get_participant.return_value = {
             "first_name": "John",
             "last_name": "Doe",
@@ -1338,7 +1344,7 @@ class TestApp(unittest.TestCase):
                 "season_name": "2024",
                 "race_name": "Test Race",
                 "barcode": "A123456",
-                "finish_token": "1",
+                "position_token": "P0001",
             },
         )
         self.assertEqual(response.status_code, 302)

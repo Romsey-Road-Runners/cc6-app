@@ -296,23 +296,29 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_calculate_age_category(self):
-        # Test Senior category
-        self.assertEqual(database.calculate_age_category(25, "Male"), "Senior")
-        self.assertEqual(database.calculate_age_category(39, "Female"), "Senior")
+        from datetime import datetime
 
-        # Test V40 category
-        self.assertEqual(database.calculate_age_category(40, "Male"), "V40")
-        self.assertEqual(database.calculate_age_category(44, "Female"), "V40")
+        # Test Senior category (born 1999, season starts 2024)
+        season_date = datetime(2024, 1, 1)
+        dob = datetime(1999, 6, 15)
+        self.assertEqual(database.calculate_age_category(season_date, dob), "Senior")
 
-        # Test V45 category
-        self.assertEqual(database.calculate_age_category(45, "Male"), "V45")
+        # Test V40 category not yet reached (born 1984, season starts 2024)
+        dob = datetime(1984, 6, 15)
+        self.assertEqual(database.calculate_age_category(season_date, dob), "Senior")
+
+        # Test birthday already passed (born July, season starts July)
+        season_date = datetime(2024, 7, 1)
+        dob = datetime(1984, 7, 1)  # Just turned 40
+        self.assertEqual(database.calculate_age_category(season_date, dob), "V40")
 
         # Test V80+ category
-        self.assertEqual(database.calculate_age_category(85, "Male"), "V80")
+        dob = datetime(1939, 1, 1)  # 85 years old
+        self.assertEqual(database.calculate_age_category(season_date, dob), "V80")
 
         # Test with different category size
-        self.assertEqual(database.calculate_age_category(45, "Male", 10), "V40")
-        self.assertEqual(database.calculate_age_category(55, "Male", 10), "V50")
+        dob = datetime(1979, 1, 1)  # 45 years old
+        self.assertEqual(database.calculate_age_category(season_date, dob, 10), "V40")
 
     @patch("database.db")
     @patch("database.firestore")

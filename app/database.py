@@ -51,8 +51,28 @@ def validate_barcode(barcode):
     return re.match(r"^A\d{2,8}$", barcode.upper()) is not None
 
 
-def calculate_age_category(age, gender, age_category_size=5):
-    """Calculate age category based on age, gender and category size"""
+def validate_position_token(token):
+    """Validate position token format (P followed by 1-4 digits)"""
+    return re.match(r"^P\d{1,4}$", token.upper()) is not None
+
+
+def calculate_age_category(season_date, dob, age_category_size=5):
+    """Calculate age category based on season date, date of birth and category size"""
+    from datetime import datetime
+
+    # Parse dates if they are strings
+    if isinstance(season_date, str):
+        season_date = datetime.strptime(season_date, "%Y-%m-%d")
+    if isinstance(dob, str):
+        dob = datetime.strptime(dob, "%Y-%m-%d")
+
+    # Calculate age during the season
+    age = (
+        season_date.year
+        - dob.year
+        - ((season_date.month, season_date.day) < (dob.month, dob.day))
+    )
+
     if age < 40:
         return "Senior"
 
