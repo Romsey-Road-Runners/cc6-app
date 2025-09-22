@@ -285,6 +285,8 @@ def get_championship_results(season_name, gender):
 @app.route("/api/individual-championship/<season_name>/<gender>")
 def get_individual_championship_results(season_name, gender):
     """API endpoint to get individual championship standings"""
+    season = database.get_season(season_name)
+
     races = database.get_races_by_season(season_name)
     if not races:
         return jsonify({"error": "No races found for season"}), 404
@@ -316,13 +318,14 @@ def get_individual_championship_results(season_name, gender):
                     }
                 participant_results[name]["race_positions"][race["name"]] = i + 1
 
-    # Calculate best 3 results for each participant
+    # Calculate best results for each participant
     standings = []
+    best_of = int(season.get("individual_results_best_of", 3)) if season else 3
     for name, data in participant_results.items():
         positions = list(data["race_positions"].values())
-        if len(positions) >= 3:
-            best_3 = sorted(positions)[:3]
-            total = sum(best_3)
+        if len(positions) >= best_of:
+            best_x = sorted(positions)[:best_of]
+            total = sum(best_x)
             standings.append(
                 {
                     "name": name,
@@ -342,6 +345,7 @@ def get_individual_championship_results(season_name, gender):
             "championship_name": f"{gender} Individual Championship",
             "races": races,
             "standings": standings,
+            "best_of": best_of,
         }
     )
 

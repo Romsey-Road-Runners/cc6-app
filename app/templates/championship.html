@@ -124,7 +124,7 @@
             let html = `
                 <div class="race-info">
                     <h2>${data.championship_name} - ${data.season}</h2>
-                    <p><strong>Scoring:</strong> ${isIndividual ? 'Best 3 race results per individual' : 'Top ' + (data.gender === 'Male' ? '4' : '3') + ' finishers per club per race'}</p>
+                    <p><strong>Scoring:</strong> ${isIndividual ? `Best ${data.best_of || 3} race results per individual` : 'Top ' + (data.gender === 'Male' ? '4' : '3') + ' finishers per club per race'}</p>
                     <p><strong>Races included:</strong> ${data.races.length}</p>
                     ${!isIndividual ? '<p><i><strong>Note:</strong> Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>' : ''}
                     ${!isIndividual ? '<p><i><strong>Note:</strong> The Total Rankings column will be adjusted if a club did not organise a race (for example due to cancellation).</i></p>' : ''}
