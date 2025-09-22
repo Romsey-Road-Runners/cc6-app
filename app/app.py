@@ -1075,11 +1075,11 @@ def add_manual_result():
     season_name = request.form.get("season_name", "").strip()
     race_name = request.form.get("race_name", "").strip()
     barcode = request.form.get("barcode", "").strip()
-    finish_token = request.form.get(
+    position_token = request.form.get(
         "position_token", ""
     ).strip()  # Template uses position_token
 
-    if not all([season_name, race_name, barcode, finish_token]):
+    if not all([season_name, race_name, barcode, position_token]):
         missing_fields = []
         if not season_name:
             missing_fields.append("season_name")
@@ -1087,7 +1087,7 @@ def add_manual_result():
             missing_fields.append("race_name")
         if not barcode:
             missing_fields.append("barcode")
-        if not finish_token:
+        if not position_token:
             missing_fields.append("position_token")
         flash(f"Missing required fields: {', '.join(missing_fields)}")
         return redirect(request.referrer or url_for("races"))
@@ -1115,9 +1115,12 @@ def add_manual_result():
             "gender": participant["gender"],
             "age_category": age_category,
             "club": participant["club"],
+            "parkrun_barcode_id": barcode,
         }
 
-        database.add_race_result(season_name, race_name, finish_token, participant_data)
+        database.add_race_result(
+            season_name, race_name, position_token, participant_data
+        )
         flash("Manual result added successfully!")
     except Exception as e:
         print(f"Error adding manual result: {e}")
