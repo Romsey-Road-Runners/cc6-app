@@ -778,7 +778,7 @@ class TestApp(unittest.TestCase):
                 "season_name": "2024",
                 "race_name": "Test Race",
                 "barcode": "A123456",
-                "finish_token": "1",
+                "position_token": "1",
             },
         )
         self.assertEqual(response.status_code, 302)

@@ -997,7 +997,7 @@ def process_upload_results():
         import io
         from datetime import datetime
 
-        content = file.read().decode("utf-8")
+        content = file.read().decode("utf-8-sig")  # Handle BOM
         csv_reader = csv.reader(io.StringIO(content))
 
         results_data = []
@@ -1009,11 +1009,9 @@ def process_upload_results():
             row_count += 1
             if len(row) < 2:
                 continue
-                
-            barcode = row[0].strip()
+
+            barcode = row[0].strip().lstrip("\ufeff")  # Remove BOM if present
             finish_token = row[1].strip()
-            
-            print(f"Row {row_count}: barcode='{barcode}', finish_token='{finish_token}'")
 
             if not finish_token:
                 continue
@@ -1026,7 +1024,6 @@ def process_upload_results():
 
             # Get participant data
             participant = database.get_participant(barcode)
-            print(f"Row {row_count}: participant lookup result: {participant is not None}")
             if participant:
                 # Calculate age at race time (simplified - using current age)
                 try:
@@ -1078,18 +1075,20 @@ def add_manual_result():
     season_name = request.form.get("season_name", "").strip()
     race_name = request.form.get("race_name", "").strip()
     barcode = request.form.get("barcode", "").strip()
-    finish_token = request.form.get("position_token", "").strip()  # Template uses position_token
-
-    # Debug: print form data
-    print(f"Form data: season_name='{season_name}', race_name='{race_name}', barcode='{barcode}', finish_token='{finish_token}'")
-    print(f"All form keys: {list(request.form.keys())}")
+    finish_token = request.form.get(
+        "position_token", ""
+    ).strip()  # Template uses position_token
 
     if not all([season_name, race_name, barcode, finish_token]):
         missing_fields = []
-        if not season_name: missing_fields.append("season_name")
-        if not race_name: missing_fields.append("race_name")
-        if not barcode: missing_fields.append("barcode")
-        if not finish_token: missing_fields.append("position_token")
+        if not season_name:
+            missing_fields.append("season_name")
+        if not race_name:
+            missing_fields.append("race_name")
+        if not barcode:
+            missing_fields.append("barcode")
+        if not finish_token:
+            missing_fields.append("position_token")
         flash(f"Missing required fields: {', '.join(missing_fields)}")
         return redirect(request.referrer or url_for("races"))
 
