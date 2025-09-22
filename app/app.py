@@ -998,15 +998,22 @@ def process_upload_results():
         from datetime import datetime
 
         content = file.read().decode("utf-8")
-        csv_reader = csv.DictReader(io.StringIO(content))
+        csv_reader = csv.reader(io.StringIO(content))
 
         results_data = []
         seen_tokens = set()
         duplicates = []
+        row_count = 0
 
         for row in csv_reader:
-            barcode = row.get("ID", "").strip()
-            finish_token = row.get("Pos", "").strip()
+            row_count += 1
+            if len(row) < 2:
+                continue
+                
+            barcode = row[0].strip()
+            finish_token = row[1].strip()
+            
+            print(f"Row {row_count}: barcode='{barcode}', finish_token='{finish_token}'")
 
             if not finish_token:
                 continue
@@ -1019,6 +1026,7 @@ def process_upload_results():
 
             # Get participant data
             participant = database.get_participant(barcode)
+            print(f"Row {row_count}: participant lookup result: {participant is not None}")
             if participant:
                 # Calculate age at race time (simplified - using current age)
                 try:
@@ -1036,15 +1044,12 @@ def process_upload_results():
                     "gender": participant["gender"],
                     "age_category": age_category,
                     "club": participant["club"],
+                    "parkrun_barcode_id": barcode,
                 }
             else:
                 # Unknown participant
                 participant_data = {
-                    "first_name": "Unknown",
-                    "last_name": "Participant",
-                    "gender": "M",
-                    "age_category": "Unknown",
-                    "club": "Unknown",
+                    "parkrun_barcode_id": barcode,
                 }
 
             results_data.append(
@@ -1070,13 +1075,22 @@ def process_upload_results():
 @login_required
 def add_manual_result():
     """Add a manual race result"""
-    season_name = request.form.get("season_name", "")
-    race_name = request.form.get("race_name", "")
-    barcode = request.form.get("barcode", "")
-    finish_token = request.form.get("finish_token", "")
+    season_name = request.form.get("season_name", "").strip()
+    race_name = request.form.get("race_name", "").strip()
+    barcode = request.form.get("barcode", "").strip()
+    finish_token = request.form.get("position_token", "").strip()  # Template uses position_token
+
+    # Debug: print form data
+    print(f"Form data: season_name='{season_name}', race_name='{race_name}', barcode='{barcode}', finish_token='{finish_token}'")
+    print(f"All form keys: {list(request.form.keys())}")
 
     if not all([season_name, race_name, barcode, finish_token]):
-        flash("All fields are required")
+        missing_fields = []
+        if not season_name: missing_fields.append("season_name")
+        if not race_name: missing_fields.append("race_name")
+        if not barcode: missing_fields.append("barcode")
+        if not finish_token: missing_fields.append("position_token")
+        flash(f"Missing required fields: {', '.join(missing_fields)}")
         return redirect(request.referrer or url_for("races"))
 
     try:
@@ -1107,6 +1121,7 @@ def add_manual_result():
         database.add_race_result(season_name, race_name, finish_token, participant_data)
         flash("Manual result added successfully!")
     except Exception as e:
+        print(f"Error adding manual result: {e}")
         flash(f"Failed to add manual result: {str(e)}")
 
     return redirect(request.referrer or url_for("races"))
