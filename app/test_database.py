@@ -16,6 +16,18 @@ class TestDatabase(unittest.TestCase):
         self.assertFalse(database.validate_barcode("A1"))
         self.assertFalse(database.validate_barcode("A12345678123"))
 
+    def test_validate_position_token_valid(self):
+        self.assertTrue(database.validate_position_token("P1"))
+        self.assertTrue(database.validate_position_token("P123"))
+        self.assertTrue(database.validate_position_token("P1234"))
+        self.assertTrue(database.validate_position_token("p123"))
+
+    def test_validate_position_token_invalid(self):
+        self.assertFalse(database.validate_position_token("A123"))
+        self.assertFalse(database.validate_position_token("P"))
+        self.assertFalse(database.validate_position_token("P12345"))
+        self.assertFalse(database.validate_position_token("123"))
+
     @patch("database.db")
     def test_get_clubs(self, mock_db):
         mock_club = Mock()
@@ -231,6 +243,34 @@ class TestDatabase(unittest.TestCase):
         self.assertNotIn("start_date", call_args)
 
     @patch("database.db")
+    def test_create_season_with_best_of_fields(self, mock_db):
+        season_name = "2024 Season"
+        database.create_season(
+            season_name, team_results_best_of="4", individual_results_best_of="3"
+        )
+
+        mock_db.collection.assert_called_with("season")
+        call_args = mock_db.collection.return_value.document.return_value.set.call_args[
+            0
+        ][0]
+        self.assertEqual(call_args["team_results_best_of"], "4")
+        self.assertEqual(call_args["individual_results_best_of"], "3")
+
+    @patch("database.db")
+    def test_create_season_with_empty_best_of_fields(self, mock_db):
+        season_name = "2024 Season"
+        database.create_season(
+            season_name, team_results_best_of="", individual_results_best_of=""
+        )
+
+        mock_db.collection.assert_called_with("season")
+        call_args = mock_db.collection.return_value.document.return_value.set.call_args[
+            0
+        ][0]
+        self.assertNotIn("team_results_best_of", call_args)
+        self.assertNotIn("individual_results_best_of", call_args)
+
+    @patch("database.db")
     def test_create_race(self, mock_db):
         database.create_race("2024 Season", "Test Race", {"date": "2024-01-01"})
 
@@ -390,6 +430,24 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(result["age_category_size"], 5)
         self.assertFalse(result["is_default"])
         self.assertEqual(result["start_date"], "2024-01-01")
+
+    @patch("database.db")
+    def test_get_season_with_best_of_fields(self, mock_db):
+        mock_doc = Mock()
+        mock_doc.exists = True
+        mock_doc.to_dict.return_value = {
+            "age_category_size": 5,
+            "is_default": False,
+            "team_results_best_of": "4",
+            "individual_results_best_of": "3",
+        }
+        mock_db.collection.return_value.document.return_value.get.return_value = (
+            mock_doc
+        )
+
+        result = database.get_season("2024 Season")
+        self.assertEqual(result["team_results_best_of"], "4")
+        self.assertEqual(result["individual_results_best_of"], "3")
 
     @patch("database.db")
     def test_get_season_not_found(self, mock_db):

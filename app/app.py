@@ -140,6 +140,7 @@ def get_race_with_results(season_name, race_name):
 def get_championship_results(season_name, gender):
     """API endpoint to get championship standings"""
     races = database.get_races_by_season(season_name)
+
     if not races:
         return jsonify({"error": "No races found for season"}), 404
 
@@ -797,6 +798,10 @@ def add_season():
     season_name = request.form.get("season_name", "").strip()
     start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
+    team_results_best_of = request.form.get("team_results_best_of", "").strip()
+    individual_results_best_of = request.form.get(
+        "individual_results_best_of", ""
+    ).strip()
 
     try:
         age_category_size = int(request.form.get("age_category_size", 5))
@@ -823,7 +828,14 @@ def add_season():
         if is_default:
             database.clear_default_seasons()
 
-        database.create_season(season_name, age_category_size, is_default, start_date)
+        database.create_season(
+            season_name,
+            age_category_size,
+            is_default,
+            start_date,
+            team_results_best_of,
+            individual_results_best_of,
+        )
         flash("Season added successfully!")
     except Exception as e:
         print(f"Error creating season: {e}")
@@ -852,20 +864,27 @@ def update_season(season_name):
     age_category_size = int(request.form.get("age_category_size", 5))
     start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
+    team_results_best_of = request.form.get("team_results_best_of", "").strip()
+    individual_results_best_of = request.form.get(
+        "individual_results_best_of", ""
+    ).strip()
 
     try:
         # If setting as default, clear other defaults first
         if is_default:
             database.clear_default_seasons()
 
-        database.update_season(
-            season_name,
-            {
-                "age_category_size": age_category_size,
-                "start_date": start_date,
-                "is_default": is_default,
-            },
-        )
+        update_data = {
+            "age_category_size": age_category_size,
+            "start_date": start_date,
+            "is_default": is_default,
+        }
+        if team_results_best_of:
+            update_data["team_results_best_of"] = team_results_best_of
+        if individual_results_best_of:
+            update_data["individual_results_best_of"] = individual_results_best_of
+
+        database.update_season(season_name, update_data)
         flash("Season updated successfully!")
     except Exception:
         flash("Failed to update season.")
