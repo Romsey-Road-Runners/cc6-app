@@ -5,17 +5,14 @@ jobs:
   test:
     name: Lint and Test
     runs-on: ubuntu-latest
-    services:
-      firestore:
-        image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
-        ports:
-          - 8080:8080
-        options: >-
-          --entrypoint="gcloud"
-        env:
-          CLOUDSDK_CORE_PROJECT: demo-test
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -34,6 +31,4 @@ jobs:
         run: pipenv run make format-check
       - name: Run tests
         working-directory: ./app
-        env:
-          FIRESTORE_EMULATOR_HOST: firestore:8080
-        run: pipenv run make test-local
+        run: firebase emulators:exec --only firestore "pipenv run make test-local"
