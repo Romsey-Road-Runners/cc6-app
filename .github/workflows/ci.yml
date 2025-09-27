@@ -1,35 +1,27 @@
 name: CI
-
 on:
   push:
-
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-    
-    - name: Install dependencies
-      working-directory: ./app
-      run: |
-        python -m pip install --upgrade pip
-        pip install pipenv
-        pipenv install --dev
-    
-    - name: Run lint check
-      working-directory: ./app
-      run: pipenv run make lint-check
-    
-    - name: Run format check
-      working-directory: ./app
-      run: pipenv run make format-check
-    
-    - name: Run tests
-      working-directory: ./app
-      run: pipenv run make test-local
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        working-directory: ./app
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv ruff
+          pipenv install --dev
+      - name: Run lint check
+        working-directory: ./app
+        run: pipenv run make lint-check
+      - name: Run format check
+        working-directory: ./app
+        run: pipenv run make format-check
+      - name: Run tests
+        working-directory: ./app
+        run: pipenv run make test-local
