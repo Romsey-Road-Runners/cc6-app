@@ -49,6 +49,15 @@ resource "google_firestore_database" "database" {
   depends_on = [google_project_service.firestore]
 }
 
+# Create daily backup schedule
+resource "google_firestore_backup_schedule" "daily_backup" {
+  project  = var.project_id
+  database = google_firestore_database.database.name
+  retention = "7776000s" # 90d
+  daily_recurrence {}
+  depends_on = [google_firestore_database.database]
+}
+
 # Enable Cloud Run API
 resource "google_project_service" "cloudrun" {
   service = "run.googleapis.com"
