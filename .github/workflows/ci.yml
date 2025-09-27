@@ -9,15 +9,15 @@ jobs:
     name: Lint and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install dependencies
@@ -41,7 +41,7 @@ jobs:
         with:
           files: app/test-results.xml
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: app/coverage.xml
           flags: unittests
