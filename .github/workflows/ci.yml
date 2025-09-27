@@ -1,7 +1,6 @@
 permissions:
   checks: write
   pull-requests: write
-  packages: write
   id-token: write
 name: CI
 on:
@@ -75,8 +74,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/romsey-road-runners/cc6-app:cache
-          cache-to: type=registry,mode=max,image-manifest=true,ref=ghcr.io/romsey-road-runners/cc6-app:cache
+          cache-from: type=registry,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
+          cache-to: type=registry,mode=max,image-manifest=true,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
