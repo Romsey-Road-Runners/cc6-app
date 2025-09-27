@@ -13,3 +13,4 @@ variable "domain" {
   description = "The sub-domain to map to the Cloud Run app"
   type        = string
 }
+

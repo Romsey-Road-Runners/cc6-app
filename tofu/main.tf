@@ -51,8 +51,8 @@ resource "google_firestore_database" "database" {
 
 # Create daily backup schedule
 resource "google_firestore_backup_schedule" "daily_backup" {
-  project  = var.project_id
-  database = google_firestore_database.database.name
+  project   = var.project_id
+  database  = google_firestore_database.database.name
   retention = "7776000s" # 90d
   daily_recurrence {}
   depends_on = [google_firestore_database.database]
@@ -67,6 +67,8 @@ resource "google_project_service" "cloudrun" {
 resource "google_project_service" "cloudbuild" {
   service = "cloudbuild.googleapis.com"
 }
+
+
 
 # Placeholder secrets (to be populated manually)
 resource "google_secret_manager_secret" "oauth_client_id" {
@@ -109,6 +111,36 @@ resource "null_resource" "docker_build" {
 resource "google_service_account" "cloudrun_sa" {
   account_id   = "cc6-app-cloudrun"
   display_name = "CC6 App Cloud Run Service Account"
+}
+
+# Create service account for GitHub Actions
+resource "google_service_account" "github_actions_sa" {
+  account_id   = "cc6-app-github-actions"
+  display_name = "CC6 App GitHub Actions Service Account"
+}
+
+# Grant Cloud Run deployment permissions to GitHub Actions SA
+resource "google_project_iam_member" "github_actions_cloudrun_developer" {
+  project = var.project_id
+  role    = "roles/run.developer"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_iam_sa_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+# Create service account key for GitHub Actions
+resource "google_service_account_key" "github_actions_key" {
+  service_account_id = google_service_account.github_actions_sa.name
 }
 
 # Grant access to secrets
@@ -229,5 +261,11 @@ resource "google_cloud_run_domain_mapping" "custom_domain" {
   spec {
     route_name = google_cloud_run_service.app.name
   }
+}
+
+# Output the service account key for GitHub Actions
+output "github_actions_service_account_key" {
+  value     = base64decode(google_service_account_key.github_actions_key.private_key)
+  sensitive = true
 }
 
