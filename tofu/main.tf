@@ -96,22 +96,6 @@ resource "google_secret_manager_secret" "oauth_client_secret" {
   depends_on = [google_project_service.secretmanager]
 }
 
-# Build and push Docker image using gcloud
-resource "null_resource" "docker_build" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      cd ../app
-      gcloud builds submit --project ${var.project_id} --tag gcr.io/${var.project_id}/cc6-app
-    EOT
-  }
-
-  depends_on = [google_project_service.cloudbuild]
-
-  triggers = {
-    source_hash = sha256(join("", [for f in fileset("../app", "**") : filesha256("../app/${f}")]))
-  }
-}
-
 # Create service account for Cloud Run
 resource "google_service_account" "cloudrun_sa" {
   account_id   = "cc6-app-cloudrun"
@@ -189,7 +173,6 @@ resource "google_cloud_run_service" "app" {
     metadata {
       annotations = {
         "run.googleapis.com/execution-environment" = "gen2"
-        "build-trigger"                            = null_resource.docker_build.id
       }
     }
 
@@ -249,7 +232,9 @@ resource "google_cloud_run_service" "app" {
     latest_revision = true
   }
 
-  depends_on = [null_resource.docker_build]
+  lifecycle {
+    ignore_changes = [template[0].spec[0].containers[0].image]
+  }
 }
 
 # Allow unauthenticated access
