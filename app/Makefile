@@ -10,8 +10,14 @@ test-coverage:
 format:
 	black *.py
 
+format-check:
+	black --check *.py
+
 lint:
 	ruff check *.py --fix
+
+lint-check:
+	ruff check *.py
 
 clean:
 	docker compose -f docker-compose.test.yml down --volumes --remove-orphans
