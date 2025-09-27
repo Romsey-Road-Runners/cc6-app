@@ -458,31 +458,45 @@ def export_participants():
     """Export participants to CSV"""
     import csv
     import io
+
     from flask import make_response
-    
+
     participants = database.get_participants()
-    
+
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Write header
     writer.writerow(["ID", "Fname", "LName", "Gender", "DOB", "Club"])
-    
+
     # Write participant data
     for participant in participants:
-        writer.writerow([
-            participant.get("barcode", ""),
-            participant.get("first_name", ""),
-            participant.get("last_name", ""),
-            participant.get("gender", ""),
-            participant.get("date_of_birth", ""),
-            participant.get("club", "")
-        ])
-    
+        # Format date from YYYY-MM-DD to dd/mm/yyyy
+        dob = participant.get("date_of_birth", "")
+        if dob:
+            try:
+                from datetime import datetime
+
+                date_obj = datetime.strptime(dob, "%Y-%m-%d")
+                dob = date_obj.strftime("%d/%m/%Y")
+            except ValueError:
+                pass  # Keep original format if parsing fails
+
+        writer.writerow(
+            [
+                participant.get("barcode", ""),
+                participant.get("first_name", ""),
+                participant.get("last_name", ""),
+                participant.get("gender", ""),
+                dob,
+                participant.get("club", ""),
+            ]
+        )
+
     response = make_response(output.getvalue())
     response.headers["Content-Disposition"] = "attachment; filename=participants.csv"
     response.headers["Content-type"] = "text/csv"
-    
+
     return response
 
 
