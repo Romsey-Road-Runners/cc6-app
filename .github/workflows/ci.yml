@@ -44,11 +44,6 @@ jobs:
         if: always()
         with:
           files: app/test-results.xml
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v5
-        with:
-          file: app/coverage.xml
-          flags: unittests
   deploy:
     name: Deploy to Google Cloud Run
     runs-on: ubuntu-latest
