@@ -10,7 +10,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
       - name: Set up Python
@@ -32,3 +32,13 @@ jobs:
       - name: Run tests
         working-directory: ./app
         run: firebase emulators:exec --only firestore "pipenv run make test-local"
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: app/test-results.xml
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: app/coverage.xml
+          flags: unittests
