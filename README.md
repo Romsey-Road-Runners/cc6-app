@@ -30,6 +30,7 @@ cc6-app/
 │   ├── templates/          # HTML templates
 │   ├── static/            # CSS, images, robots.txt
 │   ├── app.py             # Main Flask application
+│   ├── api.py             # API blueprint (JSON endpoints)
 │   ├── auth.py            # OAuth authentication
 │   ├── database.py        # Firestore database operations
 │   ├── Dockerfile         # Container configuration
@@ -141,12 +142,15 @@ See [datastructure.md](datastructure.md) for detailed schema documentation.
 - `GET /api/seasons` - List all seasons
 - `GET /api/seasons/<season>` - Season details with races
 - `GET /api/races/<season>/<race>` - Race results
+- `GET /api/championship/<season>/<gender>` - Team championship standings
+- `GET /api/individual-championship/<season>/<gender>` - Individual championship standings
 
 ### Admin Endpoints (OAuth required)
 - `GET /participants` - Participant management
 - `GET /clubs` - Club management
 - `GET /seasons` - Season management
 - `GET /races` - Race management
+- `GET /api/participants` - Get participants data (JSON)
 - `POST /upload_participants` - Bulk participant upload
 - `POST /process_upload_results` - Bulk results upload
 
