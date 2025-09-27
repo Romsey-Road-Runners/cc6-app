@@ -1,5 +1,41 @@
-.venv/
-.__pycache__/
+# Tests
+test_*.py
+*_test.py
+tests/
+__pycache__/
+*.pyc
+*.pyo
+
+# Development files
+Makefile
 .pytest_cache/
-Dockerfile*
-docker-compose*
+.coverage
+coverage.xml
+test-results.xml
+
+# Documentation
+README.md
+*.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+.tox/
+.env
+.venv/
+venv/
+
+# Pipenv dev dependencies are excluded via --deploy flag

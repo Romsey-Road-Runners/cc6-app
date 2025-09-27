@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir pipenv
 # Copy dependency files
 COPY Pipfile Pipfile.lock* ./
 
-# Install dependencies to system
-RUN pipenv install --system --deploy --clear
+# Install only production dependencies
+RUN pipenv install --system --deploy --clear --ignore-pipfile
 
 # Runtime stage
 FROM python:3.13-alpine AS runtime
