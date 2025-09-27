@@ -88,9 +88,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          create_credentials_file: false
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: cc6-app
-          region: us-central1
+          region: us-east1
           image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:${{ steps.meta.outputs.version }}

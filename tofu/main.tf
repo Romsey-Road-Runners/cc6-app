@@ -68,6 +68,11 @@ resource "google_project_service" "cloudbuild" {
   service = "cloudbuild.googleapis.com"
 }
 
+# Enable Artifact Registry API (needed for GCR)
+resource "google_project_service" "artifactregistry" {
+  service = "artifactregistry.googleapis.com"
+}
+
 
 
 # Placeholder secrets (to be populated manually)
@@ -135,6 +140,12 @@ resource "google_project_iam_member" "github_actions_iam_sa_user" {
 resource "google_project_iam_member" "github_actions_storage_admin" {
   project = var.project_id
   role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_artifact_registry_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
