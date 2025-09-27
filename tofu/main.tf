@@ -173,6 +173,7 @@ resource "google_cloud_run_service" "app" {
     metadata {
       annotations = {
         "run.googleapis.com/execution-environment" = "gen2"
+        "run.googleapis.com/startup-cpu-boost"     = "true"
       }
     }
 

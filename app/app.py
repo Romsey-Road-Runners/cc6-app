@@ -23,7 +23,8 @@ google = init_oauth(app)
 # Register API blueprint
 app.register_blueprint(api, url_prefix="/api")
 
-# Initialize running clubs and admin emails on app startup
+
+# Initialize data on startup
 database.init_running_clubs()
 database.init_admin_emails()
 
