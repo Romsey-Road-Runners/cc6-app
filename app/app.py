@@ -452,6 +452,40 @@ def participants():
     )
 
 
+@app.route("/export_participants")
+@login_required
+def export_participants():
+    """Export participants to CSV"""
+    import csv
+    import io
+    from flask import make_response
+    
+    participants = database.get_participants()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow(["ID", "Fname", "LName", "Gender", "DOB", "Club"])
+    
+    # Write participant data
+    for participant in participants:
+        writer.writerow([
+            participant.get("barcode", ""),
+            participant.get("first_name", ""),
+            participant.get("last_name", ""),
+            participant.get("gender", ""),
+            participant.get("date_of_birth", ""),
+            participant.get("club", "")
+        ])
+    
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=participants.csv"
+    response.headers["Content-type"] = "text/csv"
+    
+    return response
+
+
 @app.route("/clubs")
 @login_required
 def clubs():
