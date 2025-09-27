@@ -1,6 +1,15 @@
+<script>
+(function() {
+    const savedTheme = localStorage.getItem('theme');
+    const browserPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = savedTheme || (browserPrefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 <div class="nav">
     <a href="/">Championship</a>
     <a href="{{ url_for('public_results') }}">Race Results</a>
     <a href="{{ url_for('register_page') }}">Register</a>
     <a href="{{ url_for('participants') }}">Admin</a>
 </div>
+<script src="{{ url_for('static', filename='dark-mode.js') }}"></script>

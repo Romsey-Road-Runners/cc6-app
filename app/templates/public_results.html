@@ -17,17 +17,17 @@
             .checkboxes { flex-direction: column; gap: 10px; }
             .checkbox-group { justify-content: flex-start; }
         }
-        select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0056b3; }
+        select { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--bg-color); color: var(--text-color); }
+        button { padding: 10px 20px; background: var(--button-bg); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: var(--button-hover-bg); }
         button:disabled { background: #ccc; cursor: not-allowed; }
-        .results-container { margin-top: 20px; }
-        .race-info { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
+        .results-container { margin-top: 20px; background-color: var(--bg-color); color: var(--text-color); }
+        .race-info { margin-bottom: 20px; padding: 15px; background: var(--table-header-bg); border-radius: 4px; color: var(--text-color); }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: bold; }
-        .loading { text-align: center; padding: 20px; color: #666; }
-        .error { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 4px; margin: 10px 0; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--table-header-bg); font-weight: bold; color: var(--text-color); }
+        .loading { text-align: center; padding: 20px; color: var(--text-color); }
+        .error { color: var(--error-text); padding: 10px; background: var(--error-bg); border-radius: 4px; margin: 10px 0; }
     </style>
 </head>
 <body>
