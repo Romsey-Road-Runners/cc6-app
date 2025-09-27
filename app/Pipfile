@@ -16,6 +16,7 @@ pytest = "*"
 black = "*"
 coverage = "*"
 pytest-cov = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.13"

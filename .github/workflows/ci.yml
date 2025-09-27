@@ -22,21 +22,23 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: app/Pipfile.lock
       - name: Install dependencies
         working-directory: ./app
         run: |
           python -m pip install --upgrade pip
-          pip install pipenv ruff
-          pipenv install --dev
+          pip install pipenv
+          pipenv install --dev --system
       - name: Run lint check
         working-directory: ./app
-        run: pipenv run make lint-check
+        run: make lint-check
       - name: Run format check
         working-directory: ./app
-        run: pipenv run make format-check
+        run: make format-check
       - name: Run tests
         working-directory: ./app
-        run: firebase emulators:exec --only firestore "pipenv run make test-local"
+        run: firebase emulators:exec --only firestore "make test-local"
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
@@ -84,6 +86,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=ghcr.io/romsey-road-runners/cc6-app:cache
+          cache-to: type=registry,mode=max,image-manifest=true,ref=ghcr.io/romsey-road-runners/cc6-app:cache
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
