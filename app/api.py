@@ -279,10 +279,13 @@ def get_individual_championship_results(season_name, gender):
     # Calculate best results for each participant
     standings = []
     best_of = int(season.get("individual_results_best_of", 3)) if season else 3
+    # Use minimum of best_of or available races
+    actual_best_of = min(best_of, len(races))
+
     for name, data in participant_results.items():
         positions = list(data["race_positions"].values())
-        if len(positions) >= best_of:
-            best_x = sorted(positions)[:best_of]
+        if len(positions) >= actual_best_of:
+            best_x = sorted(positions)[:actual_best_of]
             total = sum(best_x)
             standings.append(
                 {
@@ -303,6 +306,6 @@ def get_individual_championship_results(season_name, gender):
             "championship_name": f"{gender} Individual Championship",
             "races": races,
             "standings": standings,
-            "best_of": best_of,
+            "best_of": actual_best_of,
         }
     )
