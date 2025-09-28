@@ -244,6 +244,7 @@ def get_championship_results(season_name, gender):
 def get_individual_championship_results(season_name, gender):
     """API endpoint to get individual championship standings"""
     season = database.get_season(season_name)
+    category = request.args.get("category")
 
     races = database.get_races_by_season(season_name)
     if not races:
@@ -260,6 +261,14 @@ def get_individual_championship_results(season_name, gender):
             if r.get("participant", {}).get("gender") == gender
             and r.get("participant", {}).get("first_name")
         ]
+
+        # Filter by category if specified
+        if category:
+            gender_results = [
+                r
+                for r in gender_results
+                if r.get("participant", {}).get("age_category") == category
+            ]
 
         # Store individual positions
         for i, result in enumerate(gender_results):
@@ -298,12 +307,17 @@ def get_individual_championship_results(season_name, gender):
 
     standings.sort(key=lambda x: x["total_points"])
 
+    championship_name = f"{gender} Individual Championship"
+    if category:
+        championship_name = f"{gender} {category} Individual Championship"
+
     return jsonify(
         {
             "season": season_name,
             "gender": gender,
+            "category": category,
             "championship_type": "individual",
-            "championship_name": f"{gender} Individual Championship",
+            "championship_name": championship_name,
             "races": races,
             "standings": standings,
             "best_of": actual_best_of,

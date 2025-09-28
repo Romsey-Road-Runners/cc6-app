@@ -53,6 +53,13 @@
                     <label><input type="radio" name="type" value="individual"> Individual</label>
                 </div>
             </div>
+            
+            <div class="filter-group" id="categoryGroup" style="display: none;">
+                <label>Age Category:</label>
+                <div class="radio-group" id="categoryRadios">
+                    <label><input type="radio" name="category" value="" checked> All Categories</label>
+                </div>
+            </div>
         </div>
         
         <button id="loadChampionship" disabled>Load Championship</button>
@@ -83,10 +90,51 @@
                     seasonSelect.appendChild(option);
                 });
                 
+                // Load categories for default season if available
+                if (data.default_season) {
+                    loadSeasonData(data.default_season);
+                }
+                
                 // Update load button state after loading seasons
                 updateLoadButton();
             } catch (error) {
                 console.error('Error loading seasons:', error);
+            }
+        }
+        
+        // Load season data and generate categories
+        async function loadSeasonData(seasonId) {
+            if (!seasonId) {
+                document.getElementById('categoryGroup').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/seasons/${seasonId}`);
+                const data = await response.json();
+                
+                const categoryRadios = document.getElementById('categoryRadios');
+                categoryRadios.innerHTML = '<label><input type="radio" name="category" value="" checked> All Categories</label>';
+                
+                // Generate age categories based on age_category_size
+                const categorySize = data.age_category_size || 5;
+                const categories = generateAgeCategories(categorySize);
+                
+                categories.forEach(category => {
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = 'category';
+                    input.value = category;
+                    input.addEventListener('change', updateLoadButton);
+                    
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(' ' + category));
+                    categoryRadios.appendChild(label);
+                });
+                
+            } catch (error) {
+                console.error('Error loading season data:', error);
             }
         }
         
@@ -95,6 +143,7 @@
             const seasonId = document.getElementById('seasonSelect').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
             const type = document.querySelector('input[name="type"]:checked').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value || '';
             
             if (!seasonId || !gender || !type) return;
             
@@ -102,7 +151,10 @@
             container.innerHTML = '<div class="loading">Loading championship results...</div>';
             
             try {
-                const endpoint = type === 'individual' ? `/api/individual-championship/${seasonId}/${gender}` : `/api/championship/${seasonId}/${gender}`;
+                let endpoint = type === 'individual' ? `/api/individual-championship/${seasonId}/${gender}` : `/api/championship/${seasonId}/${gender}`;
+                if (type === 'individual' && category) {
+                    endpoint += `?category=${encodeURIComponent(category)}`;
+                }
                 
                 const response = await fetch(endpoint);
                 const championshipData = await response.json();
@@ -208,15 +260,32 @@
             document.getElementById('loadChampionship').disabled = !seasonId;
         }
         
-        document.getElementById('seasonSelect').addEventListener('change', updateLoadButton);
+        document.getElementById('seasonSelect').addEventListener('change', function() {
+            loadSeasonData(this.value);
+            updateLoadButton();
+        });
         document.querySelectorAll('input[name="gender"]').forEach(radio => {
             radio.addEventListener('change', updateLoadButton);
         });
         document.querySelectorAll('input[name="type"]').forEach(radio => {
-            radio.addEventListener('change', updateLoadButton);
+            radio.addEventListener('change', function() {
+                const categoryGroup = document.getElementById('categoryGroup');
+                categoryGroup.style.display = this.value === 'individual' ? 'block' : 'none';
+                updateLoadButton();
+            });
         });
+        document.querySelector('input[name="category"]').addEventListener('change', updateLoadButton);
         
         document.getElementById('loadChampionship').addEventListener('click', loadChampionship);
+        
+        // Generate age categories based on size
+        function generateAgeCategories(size) {
+            const categories = ['Senior'];
+            for (let age = 40; age <= 80; age += size) {
+                categories.push(`V${age}`);
+            }
+            return categories;
+        }
         
         // Load seasons on page load
         loadSeasons();
