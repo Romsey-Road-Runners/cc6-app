@@ -42,10 +42,7 @@
                 </label>
             </div>
         </div>
-        <div class="form-group">
-            <label for="team_results_best_of">Team Results Best Of:</label>
-            <input type="number" id="team_results_best_of" name="team_results_best_of" value="{{ season.get('team_results_best_of', '') if season else '' }}" placeholder="e.g., 4" min="1">
-        </div>
+
         <div class="form-group">
             <label for="individual_results_best_of">Individual Results Best Of:</label>
             <input type="number" id="individual_results_best_of" name="individual_results_best_of" value="{{ season.get('individual_results_best_of', '') if season else '' }}" placeholder="e.g., 3" min="1">

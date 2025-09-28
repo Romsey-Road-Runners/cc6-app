@@ -281,15 +281,12 @@ def create_season(
     age_category_size=5,
     is_default=False,
     start_date=None,
-    team_results_best_of=None,
     individual_results_best_of=None,
 ):
     """Create new season"""
     data = {"age_category_size": age_category_size, "is_default": is_default}
     if start_date:
         data["start_date"] = start_date
-    if team_results_best_of:
-        data["team_results_best_of"] = team_results_best_of
     if individual_results_best_of:
         data["individual_results_best_of"] = individual_results_best_of
     return db.collection("season").document(season_name).set(data)

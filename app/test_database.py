@@ -245,29 +245,23 @@ class TestDatabase(unittest.TestCase):
     @patch("database.db")
     def test_create_season_with_best_of_fields(self, mock_db):
         season_name = "2024 Season"
-        database.create_season(
-            season_name, team_results_best_of="4", individual_results_best_of="3"
-        )
+        database.create_season(season_name, individual_results_best_of="3")
 
         mock_db.collection.assert_called_with("season")
         call_args = mock_db.collection.return_value.document.return_value.set.call_args[
             0
         ][0]
-        self.assertEqual(call_args["team_results_best_of"], "4")
         self.assertEqual(call_args["individual_results_best_of"], "3")
 
     @patch("database.db")
     def test_create_season_with_empty_best_of_fields(self, mock_db):
         season_name = "2024 Season"
-        database.create_season(
-            season_name, team_results_best_of="", individual_results_best_of=""
-        )
+        database.create_season(season_name, individual_results_best_of="")
 
         mock_db.collection.assert_called_with("season")
         call_args = mock_db.collection.return_value.document.return_value.set.call_args[
             0
         ][0]
-        self.assertNotIn("team_results_best_of", call_args)
         self.assertNotIn("individual_results_best_of", call_args)
 
     @patch("database.db")
@@ -438,7 +432,6 @@ class TestDatabase(unittest.TestCase):
         mock_doc.to_dict.return_value = {
             "age_category_size": 5,
             "is_default": False,
-            "team_results_best_of": "4",
             "individual_results_best_of": "3",
         }
         mock_db.collection.return_value.document.return_value.get.return_value = (
@@ -446,7 +439,6 @@ class TestDatabase(unittest.TestCase):
         )
 
         result = database.get_season("2024 Season")
-        self.assertEqual(result["team_results_best_of"], "4")
         self.assertEqual(result["individual_results_best_of"], "3")
 
     @patch("database.db")

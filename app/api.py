@@ -198,21 +198,21 @@ def get_championship_results(season_name, gender):
             v == "ORG" for v in data["race_points"].values()
         )
 
-        # Calculate total rankings
-        total_rankings = 0
-        organized_races = 0
-        for race_data in data["race_points"].values():
-            if isinstance(race_data, dict) and "rank" in race_data:
-                total_rankings += race_data["rank"]
-            elif race_data == "ORG":
-                organized_races += 1
-
-        # Apply adjustment for clubs that didn't organize a race
-        if organized_races == 0 and total_rankings > 0:
-            total_races = len(races)
-            total_rankings = total_rankings * ((total_races - 1) / total_races)
-
         if has_activity:
+            # Calculate total rankings
+            total_rankings = 0
+            organized_races = 0
+            for race_data in data["race_points"].values():
+                if isinstance(race_data, dict) and "rank" in race_data:
+                    total_rankings += race_data["rank"]
+                elif race_data == "ORG":
+                    organized_races += 1
+
+            # Apply adjustment for clubs that didn't organize a race
+            if organized_races == 0 and total_rankings > 0:
+                total_races = len(races)
+                total_rankings = total_rankings * ((total_races - 1) / total_races)
+
             club_data = {
                 "name": club,
                 "total_points": "DQ" if has_dq else round(total_rankings, 2),

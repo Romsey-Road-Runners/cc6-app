@@ -552,7 +552,6 @@ def add_season():
     season_name = request.form.get("season_name", "").strip()
     start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
-    team_results_best_of = request.form.get("team_results_best_of", "").strip()
     individual_results_best_of = request.form.get(
         "individual_results_best_of", ""
     ).strip()
@@ -587,7 +586,6 @@ def add_season():
             age_category_size,
             is_default,
             start_date,
-            team_results_best_of,
             individual_results_best_of,
         )
         flash("Season added successfully!")
@@ -618,7 +616,6 @@ def update_season(season_name):
     age_category_size = int(request.form.get("age_category_size", 5))
     start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
-    team_results_best_of = request.form.get("team_results_best_of", "").strip()
     individual_results_best_of = request.form.get(
         "individual_results_best_of", ""
     ).strip()
@@ -633,8 +630,6 @@ def update_season(season_name):
             "start_date": start_date,
             "is_default": is_default,
         }
-        if team_results_best_of:
-            update_data["team_results_best_of"] = team_results_best_of
         if individual_results_best_of:
             update_data["individual_results_best_of"] = individual_results_best_of
 
