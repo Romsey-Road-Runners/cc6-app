@@ -1,3 +1,11 @@
+// Apply theme immediately to prevent flash
+(function() {
+    const savedTheme = localStorage.getItem('theme');
+    const browserPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const currentTheme = savedTheme || (browserPrefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', currentTheme);
+})();
+
 // Dark mode toggle functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Create dark mode toggle button
@@ -7,11 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleButton.title = 'Toggle dark mode';
     document.body.appendChild(toggleButton);
 
-    // Check for saved theme preference or detect browser preference
-    const savedTheme = localStorage.getItem('theme');
-    const browserPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const currentTheme = savedTheme || (browserPrefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', currentTheme);
+    // Get current theme (already applied above)
+    const currentTheme = document.documentElement.getAttribute('data-theme');
     
     // Update button icon based on current theme
     updateToggleIcon(currentTheme);

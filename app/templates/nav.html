@@ -1,11 +1,3 @@
-<script>
-(function() {
-    const savedTheme = localStorage.getItem('theme');
-    const browserPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = savedTheme || (browserPrefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-})();
-</script>
 <div class="nav">
     <a href="/">Public Site</a>
     <a href="{{ url_for('participants') }}">Participants</a>
@@ -15,4 +7,3 @@
     <a href="{{ url_for('admins') }}">Admins</a>
     <a href="{{ url_for('logout') }}">Logout</a>
 </div>
-<script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
