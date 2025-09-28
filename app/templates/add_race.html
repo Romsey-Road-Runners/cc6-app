@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Race</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Add Race</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_race') }}">
+        <div class="form-group">
+            <label for="name">Race Name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter race name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="date">Race Date:</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="season">Season:</label>
+            <select id="season" name="season" required>
+                <option value="">Select a season</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="organising_clubs">Organising Clubs:</label>
+            <select id="organising_clubs" name="organising_clubs" multiple>
+                <option value="">Loading clubs...</option>
+            </select>
+            <small>Hold Ctrl/Cmd to select multiple clubs</small>
+        </div>
+        
+        <button type="submit">Add Race</button>
+        <a href="{{ url_for('races') }}" style="margin-left: 10px;">Cancel</a>
+    </form>
+    
+    <script>
+        // Fetch seasons from API and populate dropdown
+        fetch('/api/seasons')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('season');
+                select.innerHTML = '<option value="">Select a season</option>';
+                data.seasons.forEach(season => {
+                    const option = document.createElement('option');
+                    option.value = season;
+                    option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading seasons:', error);
+                document.getElementById('season').innerHTML = '<option value="">Error loading seasons</option>';
+            });
+        
+        // Fetch clubs from API and populate dropdown
+        fetch('/api/clubs')
+            .then(response => response.json())
+            .then(clubs => {
+                const select = document.getElementById('organising_clubs');
+                select.innerHTML = '';
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.name;
+                    option.textContent = club.name;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading clubs:', error);
+                document.getElementById('organising_clubs').innerHTML = '<option value="">Error loading clubs</option>';
+            });
+    </script>
+</body>
+</html>

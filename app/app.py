@@ -667,6 +667,13 @@ def races():
     return render_template("races.html", races=all_races, user=session.get("user"))
 
 
+@app.route("/add_race")
+@login_required
+def add_race_page():
+    """Show add race form"""
+    return render_template("add_race.html", user=session.get("user"))
+
+
 @app.route("/add_race", methods=["POST"])
 @login_required
 def add_race():

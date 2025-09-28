@@ -24,34 +24,15 @@
         {% endif %}
     {% endwith %}
     
-    <form method="POST" action="{{ url_for('add_race') }}">
-        <div class="form-group">
-            <label for="name">Race Name:</label>
-            <input type="text" id="name" name="name" placeholder="Enter race name" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="date">Race Date:</label>
-            <input type="date" id="date" name="date" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="season">Season:</label>
-            <select id="season" name="season" required>
-                <option value="">Select a season</option>
+    <div style="margin-bottom: 20px; display: flex; gap: 20px; align-items: center;">
+        <div>
+            <label for="seasonFilter">Filter by Season:</label>
+            <select id="seasonFilter">
+                <option value="">All Seasons</option>
             </select>
         </div>
-        
-        <div class="form-group">
-            <label for="organising_clubs">Organising Clubs:</label>
-            <select id="organising_clubs" name="organising_clubs" multiple>
-                <option value="">Loading clubs...</option>
-            </select>
-            <small>Hold Ctrl/Cmd to select multiple clubs</small>
-        </div>
-        
-        <button type="submit">Add Race</button>
-    </form>
+        <a href="{{ url_for('add_race') }}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Add New Race</a>
+    </div>
     
     <table>
         <thead>
@@ -79,41 +60,55 @@
     </table>
     
     <script>
-        // Fetch seasons from API and populate dropdown
+        let allRaces = [];
+        
+        // Fetch seasons and populate filter dropdown
         fetch('/api/seasons')
             .then(response => response.json())
             .then(data => {
-                const select = document.getElementById('season');
-                select.innerHTML = '<option value="">Select a season</option>';
+                const select = document.getElementById('seasonFilter');
+                select.innerHTML = '<option value="">All Seasons</option>';
                 data.seasons.forEach(season => {
                     const option = document.createElement('option');
                     option.value = season;
                     option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
                     select.appendChild(option);
                 });
+                
+                // Store all races for filtering
+                const rows = document.querySelectorAll('tbody tr');
+                allRaces = Array.from(rows).map(row => ({
+                    element: row,
+                    season: row.children[2].textContent
+                }));
+                
+                // Apply default filter if set
+                if (data.default_season) {
+                    filterRaces(data.default_season);
+                }
             })
             .catch(error => {
                 console.error('Error loading seasons:', error);
-                document.getElementById('season').innerHTML = '<option value="">Error loading seasons</option>';
             });
         
-        // Fetch clubs from API and populate dropdown
-        fetch('/api/clubs')
-            .then(response => response.json())
-            .then(clubs => {
-                const select = document.getElementById('organising_clubs');
-                select.innerHTML = '';
-                clubs.forEach(club => {
-                    const option = document.createElement('option');
-                    option.value = club.name;
-                    option.textContent = club.name;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error loading clubs:', error);
-                document.getElementById('organising_clubs').innerHTML = '<option value="">Error loading clubs</option>';
+        // Filter races by season
+        function filterRaces(selectedSeason) {
+            allRaces.forEach(race => {
+                if (!selectedSeason || race.season === selectedSeason) {
+                    race.element.style.display = '';
+                } else {
+                    race.element.style.display = 'none';
+                }
             });
+        }
+        
+        // Add event listener for season filter
+        document.getElementById('seasonFilter').addEventListener('change', function() {
+            filterRaces(this.value);
+        });
     </script>
 </body>
 </html>
