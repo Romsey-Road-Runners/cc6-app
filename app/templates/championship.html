@@ -191,6 +191,7 @@
                             <tr>
                                 <th>Position</th>
                                 <th>${isIndividual ? 'Name' : 'Club'}</th>
+                                ${isIndividual ? '<th>Category</th>' : ''}
                                 <th>Total Rankings</th>
                 `;
                 
@@ -218,6 +219,7 @@
                         <tr>
                             <td>${currentPosition}</td>
                             <td>${entry.name}${isIndividual && entry.club ? ' (' + entry.club + ')' : ''}</td>
+                            ${isIndividual ? `<td>${entry.age_category || '-'}</td>` : ''}
                             <td><strong>${entry.total_points}</strong></td>
                     `;
                     

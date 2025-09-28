@@ -275,11 +275,13 @@ def get_individual_championship_results(season_name, gender):
             participant = result.get("participant", {})
             name = f"{participant.get('first_name', '')} {participant.get('last_name', '')}".strip()
             club = participant.get("club", "")
+            age_category = participant.get("age_category", "")
 
             if name and name != " ":
                 if name not in participant_results:
                     participant_results[name] = {
                         "club": club,
+                        "age_category": age_category,
                         "race_positions": {},
                         "total": 0,
                     }
@@ -300,6 +302,7 @@ def get_individual_championship_results(season_name, gender):
                 {
                     "name": name,
                     "club": data["club"],
+                    "age_category": data["age_category"],
                     "total_points": total,
                     "race_positions": data["race_positions"],
                 }
