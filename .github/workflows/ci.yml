@@ -69,7 +69,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: "./app"
           push: true
@@ -78,11 +78,11 @@ jobs:
           cache-from: type=registry,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
           cache-to: type=registry,mode=max,image-manifest=true,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           service: cc6-app
           region: us-east1
