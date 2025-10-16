@@ -36,9 +36,19 @@ def get_seasons():
     if default_season:
         races = database.get_races_by_season(default_season)
         if races:
-            # Sort races by date (most recent first)
-            races.sort(key=lambda x: x.get("date", ""), reverse=True)
-            default_race = races[0]["name"]
+            from datetime import datetime
+
+            today = datetime.now().date()
+            # Filter to only past/today races, then sort by date (most recent first)
+            past_races = [
+                r
+                for r in races
+                if datetime.strptime(r.get("date", "1900-01-01"), "%Y-%m-%d").date()
+                <= today
+            ]
+            if past_races:
+                past_races.sort(key=lambda x: x.get("date", ""), reverse=True)
+                default_race = past_races[0]["name"]
 
     return jsonify(
         {
