@@ -19,6 +19,13 @@ def get_participants_api():
     return jsonify(database.get_participants())
 
 
+@api.route("/participants/<participant_id>/results")
+def get_participant_results(participant_id):
+    """API endpoint to get all results for a participant"""
+    results = database.get_participant_results(participant_id)
+    return jsonify(results)
+
+
 @api.route("/seasons")
 def get_seasons():
     """API endpoint to get seasons with IDs and default season"""
@@ -287,6 +294,7 @@ def get_individual_championship_results(season_name, gender):
                         participant_results[name] = {
                             "club": club,
                             "age_category": age_category,
+                            "participant_id": participant.get("parkrun_barcode_id"),
                             "race_positions": {},
                             "total": 0,
                         }
@@ -308,6 +316,7 @@ def get_individual_championship_results(season_name, gender):
                     "name": name,
                     "club": data["club"],
                     "age_category": data["age_category"],
+                    "participant_id": data.get("participant_id"),
                     "total_points": total,
                     "race_positions": data["race_positions"],
                 }

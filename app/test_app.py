@@ -1374,6 +1374,64 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/register")
         self.assertEqual(response.status_code, 200)
 
+    @patch("database.get_participant_results")
+    @patch("database.get_participant")
+    def test_participant_results_route(self, mock_get_participant, mock_get_results):
+        mock_get_participant.return_value = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "club": "Test Club",
+            "gender": "Male",
+            "barcode": "A123456",
+        }
+        mock_get_results.return_value = [
+            {
+                "season": "2024",
+                "race_name": "Test Race",
+                "race_date": "2024-01-15",
+                "finish_token": "P0001",
+                "participant": {"age_category": "Senior"},
+            }
+        ]
+
+        response = self.client.get("/participant/A123456")
+        self.assertEqual(response.status_code, 200)
+        mock_get_participant.assert_called_with("A123456")
+        mock_get_results.assert_called_with("A123456")
+
+    @patch("database.get_participant")
+    def test_participant_results_not_found(self, mock_get_participant):
+        mock_get_participant.return_value = None
+
+        response = self.client.get("/participant/A999999")
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.get_participant_results")
+    def test_api_participant_results(self, mock_get_results):
+        mock_get_results.return_value = [
+            {
+                "season": "2024",
+                "race_name": "Test Race",
+                "race_date": "2024-01-15",
+                "finish_token": "P0001",
+                "participant": {"first_name": "John", "last_name": "Doe"},
+            }
+        ]
+
+        response = self.client.get("/api/participants/A123456/results")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.json, list)
+        self.assertEqual(len(response.json), 1)
+        mock_get_results.assert_called_with("A123456")
+
+    @patch("database.get_participant_results")
+    def test_api_participant_results_empty(self, mock_get_results):
+        mock_get_results.return_value = []
+
+        response = self.client.get("/api/participants/A999999/results")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json), 0)
+
     # CSV Processing Tests
     @patch("database.is_admin_email")
     @patch("database.get_clubs")

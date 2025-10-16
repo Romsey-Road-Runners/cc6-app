@@ -605,6 +605,64 @@ class TestDatabase(unittest.TestCase):
 
         mock_db.collection.return_value.document.assert_not_called()
 
+    @patch("database.db")
+    def test_get_participant_results(self, mock_db):
+        # Mock result document
+        mock_result = Mock()
+        mock_result.to_dict.return_value = {
+            "participant": {
+                "first_name": "John",
+                "last_name": "Doe",
+                "parkrun_barcode_id": "A123456",
+            }
+        }
+        mock_result.id = "P0001"
+        mock_result.reference.path = "season/2024/races/Race1/results/P0001"
+
+        # Mock race document for date
+        mock_race_doc = Mock()
+        mock_race_doc.exists = True
+        mock_race_doc.to_dict.return_value = {"date": "2024-01-15"}
+
+        # Setup collection group query
+        mock_db.collection_group.return_value.where.return_value.get.return_value = [
+            mock_result
+        ]
+
+        # Setup race document query
+        mock_db.collection.return_value.document.return_value.collection.return_value.document.return_value.get.return_value = (
+            mock_race_doc
+        )
+
+        result = database.get_participant_results("A123456")
+
+        # Verify collection group query was called
+        mock_db.collection_group.assert_called_with("results")
+        mock_db.collection_group.return_value.where.assert_called_with(
+            "participant.parkrun_barcode_id", "==", "A123456"
+        )
+
+        # Verify result structure
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["season"], "2024")
+        self.assertEqual(result[0]["race_name"], "Race1")
+        self.assertEqual(result[0]["race_date"], "2024-01-15")
+        self.assertEqual(result[0]["finish_token"], "P0001")
+        self.assertEqual(result[0]["participant"]["first_name"], "John")
+
+    @patch("database.db")
+    def test_get_participant_results_no_results(self, mock_db):
+        # Mock empty collection group query
+        mock_db.collection_group.return_value.where.return_value.get.return_value = []
+
+        result = database.get_participant_results("A999999")
+
+        # Verify collection group query was called
+        mock_db.collection_group.assert_called_with("results")
+
+        # Verify empty result
+        self.assertEqual(len(result), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

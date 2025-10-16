@@ -218,7 +218,7 @@
                     html += `
                         <tr>
                             <td>${currentPosition}</td>
-                            <td>${entry.name}${isIndividual && entry.club ? ' (' + entry.club + ')' : ''}</td>
+                            <td>${isIndividual && entry.participant_id ? `<a href="/participant/${entry.participant_id}" style="color: #007bff; text-decoration: none;">${entry.name}</a>${entry.club ? ' (' + entry.club + ')' : ''}` : entry.name}</td>
                             ${isIndividual ? `<td>${entry.age_category || '-'}</td>` : ''}
                             <td><strong>${entry.total_points}</strong></td>
                     `;
@@ -288,6 +288,8 @@
             }
             return categories;
         }
+        
+
         
         // Load seasons on page load
         loadSeasons();

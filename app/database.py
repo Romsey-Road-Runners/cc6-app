@@ -417,3 +417,45 @@ def add_race_results_batch(season_name, race_name, results_data):
             batch.set(doc_ref, {"participant": participant_data})
 
         batch.commit()
+
+
+def get_participant_results(participant_id):
+    """Get all results for a specific participant across all seasons and races"""
+    # Use collection group query to search across all results collections
+    results_query = (
+        db.collection_group("results")
+        .where("participant.parkrun_barcode_id", "==", participant_id)
+        .get()
+    )
+
+    results = []
+    for result in results_query:
+        # Extract season and race from document path
+        path_parts = result.reference.path.split("/")
+        season_name = path_parts[1]
+        race_name = path_parts[3]
+
+        # Get race data for date
+        race_doc = (
+            db.collection("season")
+            .document(season_name)
+            .collection("races")
+            .document(race_name)
+            .get()
+        )
+        race_date = race_doc.to_dict().get("date", "") if race_doc.exists else ""
+
+        result_data = result.to_dict()
+        results.append(
+            {
+                "season": season_name,
+                "race_name": race_name,
+                "race_date": race_date,
+                "finish_token": result.id,
+                "participant": result_data.get("participant", {}),
+            }
+        )
+
+    # Sort by race date (most recent first)
+    results.sort(key=lambda x: x.get("race_date", ""), reverse=True)
+    return results

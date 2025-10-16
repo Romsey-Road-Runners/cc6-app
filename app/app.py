@@ -47,6 +47,25 @@ def public_results():
     return render_template("public_results.html")
 
 
+@app.route("/participant/<participant_id>")
+def participant_results(participant_id):
+    """Participant results page"""
+    results = database.get_participant_results(participant_id)
+    participant = database.get_participant(participant_id)
+
+    if not participant:
+        flash("Participant not found")
+        return redirect(url_for("index"))
+
+    participant_name = f"{participant['first_name']} {participant['last_name']}"
+    return render_template(
+        "participant_results.html",
+        participant=participant,
+        participant_name=participant_name,
+        results=results,
+    )
+
+
 @app.route("/robots.txt")
 def robots_txt():
     return app.send_static_file("robots.txt")

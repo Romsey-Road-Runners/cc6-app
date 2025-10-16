@@ -240,11 +240,13 @@
                 
                 raceData.results.forEach((result, index) => {
                     const participant = result.participant || {};
+                    const participantName = participant.first_name && participant.last_name ? participant.first_name + ' ' + participant.last_name : '-';
+                    const nameCell = participant.parkrun_barcode_id ? `<a href="/participant/${participant.parkrun_barcode_id}" style="color: #007bff; text-decoration: none;">${participantName}</a>` : participantName;
                     html += `
                         <tr>
                             <td>${index + 1}</td>
                             <td>${result.finish_token}</td>
-                            <td>${participant.first_name && participant.last_name ? participant.first_name + ' ' + participant.last_name : '-'}</td>
+                            <td>${nameCell}</td>
                             <td>${participant.gender || '-'}</td>
                             <td>${participant.age_category || '-'}</td>
                             <td>${participant.club || '-'}</td>
