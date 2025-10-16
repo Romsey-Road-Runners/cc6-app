@@ -109,7 +109,9 @@ class TestDatabase(unittest.TestCase):
         mock_participant = Mock()
         mock_participant.to_dict.return_value = {"first_name": "John"}
         mock_participant.id = "A123456"
-        mock_db.collection.return_value.get.return_value = [mock_participant]
+        mock_db.collection.return_value.order_by.return_value.order_by.return_value.get.return_value = [
+            mock_participant
+        ]
 
         result = database.get_participants()
         self.assertEqual(len(result), 1)
