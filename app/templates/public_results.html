@@ -106,22 +106,32 @@
                 const seasonSelect = document.getElementById('seasonSelect');
                 seasonSelect.innerHTML = '<option value="">Select Season</option>';
                 
+                // Check for URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const selectedSeason = urlParams.get('season') || data.default_season;
+                const selectedRace = urlParams.get('race');
+                
                 seasons.forEach(season => {
                     const option = document.createElement('option');
                     option.value = season;
                     option.textContent = season;
-                    if (season === data.default_season) {
+                    if (season === selectedSeason) {
                         option.selected = true;
                     }
                     seasonSelect.appendChild(option);
                 });
                 
-                // Auto-load races if default season is selected
-                if (data.default_season) {
-                    await loadRaces(data.default_season);
+                // Auto-load races if season is selected
+                if (selectedSeason) {
+                    await loadRaces(selectedSeason);
                     
-                    // Auto-select and load most recent race
-                    if (data.default_race) {
+                    // Auto-select race if specified in URL
+                    if (selectedRace) {
+                        const raceSelect = document.getElementById('raceSelect');
+                        raceSelect.value = selectedRace;
+                        document.getElementById('loadResults').disabled = false;
+                        loadResults();
+                    } else if (data.default_race && selectedSeason === data.default_season) {
                         const raceSelect = document.getElementById('raceSelect');
                         raceSelect.value = data.default_race;
                         document.getElementById('loadResults').disabled = false;

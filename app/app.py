@@ -44,7 +44,15 @@ def register_page():
 @app.route("/results")
 def public_results():
     """Public race results page"""
-    return render_template("public_results.html")
+    # Get query parameters for pre-selection
+    selected_season = request.args.get("season")
+    selected_race = request.args.get("race")
+
+    return render_template(
+        "public_results.html",
+        selected_season=selected_season,
+        selected_race=selected_race,
+    )
 
 
 @app.route("/participant/<participant_id>")

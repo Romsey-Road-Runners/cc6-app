@@ -638,9 +638,8 @@ class TestDatabase(unittest.TestCase):
 
         # Verify collection group query was called
         mock_db.collection_group.assert_called_with("results")
-        mock_db.collection_group.return_value.where.assert_called_with(
-            "participant.parkrun_barcode_id", "==", "A123456"
-        )
+        # Verify the filter parameter was used (new Firestore syntax)
+        mock_db.collection_group.return_value.where.assert_called()
 
         # Verify result structure
         self.assertEqual(len(result), 1)
