@@ -251,6 +251,7 @@ def get_individual_championship_results(season_name, gender):
         return jsonify({"error": "No races found for season"}), 404
 
     participant_results = {}
+    races_with_results = []
 
     for race in races:
         results = database.get_race_results(season_name, race["name"])
@@ -270,28 +271,32 @@ def get_individual_championship_results(season_name, gender):
                 if r.get("participant", {}).get("age_category") == category
             ]
 
-        # Store individual positions
-        for i, result in enumerate(gender_results):
-            participant = result.get("participant", {})
-            name = f"{participant.get('first_name', '')} {participant.get('last_name', '')}".strip()
-            club = participant.get("club", "")
-            age_category = participant.get("age_category", "")
+        # Only process races that have results
+        if gender_results:
+            races_with_results.append(race)
 
-            if name and name != " ":
-                if name not in participant_results:
-                    participant_results[name] = {
-                        "club": club,
-                        "age_category": age_category,
-                        "race_positions": {},
-                        "total": 0,
-                    }
-                participant_results[name]["race_positions"][race["name"]] = i + 1
+            # Store individual positions
+            for i, result in enumerate(gender_results):
+                participant = result.get("participant", {})
+                name = f"{participant.get('first_name', '')} {participant.get('last_name', '')}".strip()
+                club = participant.get("club", "")
+                age_category = participant.get("age_category", "")
+
+                if name and name != " ":
+                    if name not in participant_results:
+                        participant_results[name] = {
+                            "club": club,
+                            "age_category": age_category,
+                            "race_positions": {},
+                            "total": 0,
+                        }
+                    participant_results[name]["race_positions"][race["name"]] = i + 1
 
     # Calculate best results for each participant
     standings = []
     best_of = int(season.get("individual_results_best_of", 3)) if season else 3
-    # Use minimum of best_of or available races
-    actual_best_of = min(best_of, len(races))
+    # Use minimum of best_of or races with actual results
+    actual_best_of = min(best_of, len(races_with_results))
 
     for name, data in participant_results.items():
         positions = list(data["race_positions"].values())
@@ -321,7 +326,7 @@ def get_individual_championship_results(season_name, gender):
             "category": category,
             "championship_type": "individual",
             "championship_name": championship_name,
-            "races": races,
+            "races": races_with_results,
             "standings": standings,
             "best_of": actual_best_of,
         }
