@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ participant_name }} - Race Results</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'public_nav.html' %}
+    
+    <div class="container">
+        <h1>{{ participant_name }}</h1>
+        <p><strong>Club:</strong> {{ participant.club or 'Not specified' }}</p>
+        <p><strong>Gender:</strong> {{ participant.gender or 'Not specified' }}</p>
+        <p><strong>Parkrun ID:</strong> {{ participant.barcode }}</p>
+        
+        <h2>Race Results ({{ results|length }} races)</h2>
+        
+        {% if results %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Season</th>
+                        <th>Race</th>
+                        <th>Date</th>
+                        <th>Position</th>
+                        <th>Age Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result.season }}</td>
+                        <td>{{ result.race_name }}</td>
+                        <td>{{ result.race_date }}</td>
+                        <td>{{ result.finish_token.replace('P', '').lstrip('0') or result.finish_token }}</td>
+                        <td>{{ result.participant.age_category or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No race results found for this participant.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

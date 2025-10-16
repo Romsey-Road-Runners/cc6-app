@@ -53,7 +53,7 @@ resource "google_firestore_database" "database" {
 resource "google_firestore_index" "participant_results_index" {
   project    = var.project_id
   database   = google_firestore_database.database.name
-  collection = "season/{season}/races/{race}/results"
+  collection = "results"
 
   fields {
     field_path = "participant.parkrun_barcode_id"
