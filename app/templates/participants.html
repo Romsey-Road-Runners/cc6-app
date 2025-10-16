@@ -27,6 +27,15 @@
         {% endif %}
     {% endwith %}
     
+    <form method="GET" style="margin-bottom: 20px;">
+        <div class="form-group">
+            <label for="search">Search participants:</label>
+            <input type="text" id="search" name="search" value="{{ search }}" placeholder="Search by name, ID, or club">
+            <button type="submit">Search</button>
+            {% if search %}<a href="{{ url_for('participants') }}" style="margin-left: 10px;">Clear</a>{% endif %}
+        </div>
+    </form>
+    
     <form method="POST" action="{{ url_for('upload_participants') }}" enctype="multipart/form-data">
         <div class="form-group">
             <label for="file">Upload Participants CSV:</label>
@@ -74,10 +83,26 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="9">No participants registered yet.</td>
+                <td colspan="9">No participants found.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    
+    {% if pagination.total_pages > 1 %}
+    <div style="margin: 20px 0; text-align: center;">
+        <p>Page {{ pagination.page }} of {{ pagination.total_pages }} ({{ pagination.total_count }} total)</p>
+        <div>
+            {% if pagination.page > 1 %}
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}" style="margin: 0 5px; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px;">First</a>
+                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}" style="margin: 0 5px; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px;">Previous</a>
+            {% endif %}
+            {% if pagination.page < pagination.total_pages %}
+                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}" style="margin: 0 5px; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px;">Next</a>
+                <a href="?page={{ pagination.total_pages }}{% if search %}&search={{ search }}{% endif %}" style="margin: 0 5px; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px;">Last</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </body>
 </html>

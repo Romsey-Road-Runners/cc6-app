@@ -15,8 +15,14 @@ def get_clubs():
 @api.route("/participants")
 @login_required
 def get_participants_api():
-    """API endpoint to get participants"""
-    return jsonify(database.get_participants())
+    """API endpoint to get participants with pagination and search"""
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 50))
+    search = request.args.get("search")
+
+    return jsonify(
+        database.get_participants(page=page, page_size=page_size, search=search)
+    )
 
 
 @api.route("/participants/<participant_id>/results")

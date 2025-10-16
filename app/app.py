@@ -175,9 +175,17 @@ def logout():
 @login_required
 def participants():
     """View all registered participants"""
-    participants = database.get_participants()
+    page = int(request.args.get("page", 1))
+    search = request.args.get("search", "").strip()
+
+    result = database.get_participants(page=page, search=search if search else None)
+
     return render_template(
-        "participants.html", participants=participants, user=session.get("user")
+        "participants.html",
+        participants=result["participants"],
+        pagination=result,
+        search=search,
+        user=session.get("user"),
     )
 
 

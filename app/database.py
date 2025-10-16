@@ -163,17 +163,46 @@ def update_participant(barcode, data):
     return db.collection("participants").document(barcode).update(data)
 
 
-def get_participants():
-    """Get all participants ordered by last name"""
-    participants = (
-        db.collection("participants").order_by("last_name").order_by("first_name").get()
-    )
+def get_participants(page=1, page_size=50, search=None):
+    """Get participants with pagination and optional search"""
+    query = db.collection("participants").order_by("last_name").order_by("first_name")
+
+    if search:
+        # Use prefix search on last_name for better performance
+        # This limits search to last name prefix matches only
+        search_upper = search.upper()
+        query = query.where(
+            filter=firestore.FieldFilter("last_name", ">=", search_upper)
+        ).where(filter=firestore.FieldFilter("last_name", "<", search_upper + "\uf8ff"))
+
+        # Get all matching results for count, then paginate
+        all_results = query.get()
+        total_count = len(all_results)
+
+        # Apply pagination
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        participants = all_results[start_idx:end_idx]
+    else:
+        # Apply pagination directly to query
+        offset = (page - 1) * page_size
+        participants = query.offset(offset).limit(page_size).get()
+        # Get total count for pagination info
+        total_count = len(query.get())
+
     result = []
     for p in participants:
         participant_data = p.to_dict()
-        participant_data["barcode"] = p.id  # Add barcode from document ID
+        participant_data["barcode"] = p.id
         result.append(participant_data)
-    return result
+
+    return {
+        "participants": result,
+        "total_count": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total_count + page_size - 1) // page_size,
+    }
 
 
 def get_participant(barcode):
