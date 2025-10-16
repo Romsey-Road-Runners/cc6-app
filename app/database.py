@@ -269,7 +269,11 @@ def get_default_season():
 
 def clear_default_seasons():
     """Clear all default season flags"""
-    seasons = db.collection("season").where("is_default", "==", True).get()
+    seasons = (
+        db.collection("season")
+        .where(filter=firestore.FieldFilter("is_default", "==", True))
+        .get()
+    )
     batch = db.batch()
     for season in seasons:
         batch.update(season.reference, {"is_default": False})
@@ -424,7 +428,11 @@ def get_participant_results(participant_id):
     # Use collection group query to search across all results collections
     results_query = (
         db.collection_group("results")
-        .where("participant.parkrun_barcode_id", "==", participant_id)
+        .where(
+            filter=firestore.FieldFilter(
+                "participant.parkrun_barcode_id", "==", participant_id
+            )
+        )
         .get()
     )
 
