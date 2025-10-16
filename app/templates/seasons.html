@@ -82,9 +82,9 @@
                 <td>{{ season.get('individual_results_best_of', '') }}</td>
                 <td>{{ '✓' if season.get('is_default') else '' }}</td>
                 <td>
-                    <a href="{{ url_for('edit_season', season_name=season.name) }}">Edit</a> |
+                    <a href="{{ url_for('edit_season', season_name=season.name) }}" style="display: inline-block; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px; margin-right: 5px; font-size: 12px;">Edit</a>
                     <form method="POST" action="{{ url_for('delete_season', season_name=season.name) }}" style="display: inline;">
-                        <button type="submit" onclick="return confirm('Delete this season?')" style="background: none; border: none; color: red; cursor: pointer;">Delete</button>
+                        <button type="submit" onclick="return confirm('Delete this season?')" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Delete</button>
                     </form>
                 </td>
             </tr>

@@ -164,8 +164,10 @@ def update_participant(barcode, data):
 
 
 def get_participants():
-    """Get all participants"""
-    participants = db.collection("participants").get()
+    """Get all participants ordered by last name"""
+    participants = (
+        db.collection("participants").order_by("last_name").order_by("first_name").get()
+    )
     result = []
     for p in participants:
         participant_data = p.to_dict()
