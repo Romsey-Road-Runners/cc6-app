@@ -168,27 +168,36 @@ def get_participants(page=1, page_size=50, search=None):
     query = db.collection("participants").order_by("last_name").order_by("first_name")
 
     if search:
-        # Use prefix search on last_name for better performance
-        # This limits search to last name prefix matches only
-        search_upper = search.upper()
-        query = query.where(
-            filter=firestore.FieldFilter("last_name", ">=", search_upper)
-        ).where(filter=firestore.FieldFilter("last_name", "<", search_upper + "\uf8ff"))
+        # For search, fetch all participants and filter in Python
+        search_lower = search.lower()
+        all_participants = query.get()
+        filtered_participants = []
 
-        # Get all matching results for count, then paginate
-        all_results = query.get()
-        total_count = len(all_results)
+        for p in all_participants:
+            data = p.to_dict()
+            full_name = (
+                f"{data.get('first_name', '')} {data.get('last_name', '')}".lower()
+            )
+            barcode = p.id.lower()
+            club = data.get("club", "").lower()
 
-        # Apply pagination
+            if (
+                search_lower in full_name
+                or search_lower in barcode
+                or search_lower in club
+            ):
+                filtered_participants.append(p)
+
+        total_count = len(filtered_participants)
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
-        participants = all_results[start_idx:end_idx]
+        participants = filtered_participants[start_idx:end_idx]
     else:
         # Apply pagination directly to query
         offset = (page - 1) * page_size
         participants = query.offset(offset).limit(page_size).get()
-        # Get total count for pagination info
-        total_count = len(query.get())
+        # Use count aggregation to get total without fetching all documents
+        total_count = query.count().get()[0][0].value
 
     result = []
     for p in participants:

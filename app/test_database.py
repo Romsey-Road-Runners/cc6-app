@@ -109,11 +109,17 @@ class TestDatabase(unittest.TestCase):
         mock_participant = Mock()
         mock_participant.to_dict.return_value = {"first_name": "John"}
         mock_participant.id = "A123456"
+
+        # Mock the paginated query
         mock_db.collection.return_value.order_by.return_value.order_by.return_value.offset.return_value.limit.return_value.get.return_value = [
             mock_participant
         ]
-        mock_db.collection.return_value.order_by.return_value.order_by.return_value.get.return_value = [
-            mock_participant
+
+        # Mock the count aggregation query
+        mock_count_result = Mock()
+        mock_count_result.value = 1
+        mock_db.collection.return_value.order_by.return_value.order_by.return_value.count.return_value.get.return_value = [
+            [mock_count_result]
         ]
 
         result = database.get_participants()
