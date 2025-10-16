@@ -6,6 +6,15 @@
     <title>{{ participant_name }} - Race Results</title>
     <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        table a {
+            color: #007cba;
+            text-decoration: none;
+        }
+        table a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
@@ -14,7 +23,7 @@
     
     <div class="container">
         <h1>{{ participant_name }}</h1>
-        <p><strong>Current club:</strong> {{ participant.club or 'Not specified' }}</p>
+        <p><strong>Current Club:</strong> {{ participant.club or 'Not specified' }}</p>
         <p><strong>Gender:</strong> {{ participant.gender or 'Not specified' }}</p>
         <p><strong>Parkrun ID:</strong> {{ participant.barcode }}</p>
         
