@@ -160,8 +160,22 @@
                     raceSelect.appendChild(option);
                 });
                 
+                // Check if race is already set by URL parameter
+                if (!raceSelect.value) {
+                    // Find most recent race that's not in the future
+                    const today = new Date();
+                    const pastRaces = currentRaces.filter(race => new Date(race.date) <= today);
+                    if (pastRaces.length > 0) {
+                        const mostRecentRace = pastRaces.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                        raceSelect.value = mostRecentRace.name;
+                        document.getElementById('loadResults').disabled = false;
+                    }
+                }
+                
                 raceSelect.disabled = false;
-                document.getElementById('loadResults').disabled = true;
+                if (!raceSelect.value) {
+                    document.getElementById('loadResults').disabled = true;
+                }
                 
                 // Update category filters based on season
                 const categorySize = seasonData.age_category_size || 5;
