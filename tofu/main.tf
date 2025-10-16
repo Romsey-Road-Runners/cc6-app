@@ -49,7 +49,22 @@ resource "google_firestore_database" "database" {
   depends_on = [google_project_service.firestore]
 }
 
+# Create composite index for participant ordering
+resource "google_firestore_index" "participants_name_index" {
+  project    = var.project_id
+  database   = google_firestore_database.database.name
+  collection = "participants"
 
+  fields {
+    field_path = "last_name"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "first_name"
+    order      = "ASCENDING"
+  }
+}
 
 # Create daily backup schedule
 resource "google_firestore_backup_schedule" "daily_backup" {
