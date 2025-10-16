@@ -109,13 +109,19 @@ class TestDatabase(unittest.TestCase):
         mock_participant = Mock()
         mock_participant.to_dict.return_value = {"first_name": "John"}
         mock_participant.id = "A123456"
+        mock_db.collection.return_value.order_by.return_value.order_by.return_value.offset.return_value.limit.return_value.get.return_value = [
+            mock_participant
+        ]
         mock_db.collection.return_value.order_by.return_value.order_by.return_value.get.return_value = [
             mock_participant
         ]
 
         result = database.get_participants()
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["barcode"], "A123456")
+        self.assertEqual(len(result["participants"]), 1)
+        self.assertEqual(result["participants"][0]["barcode"], "A123456")
+        self.assertEqual(result["total_count"], 1)
+        self.assertEqual(result["page"], 1)
+        self.assertEqual(result["page_size"], 50)
 
     @patch("database.db")
     def test_get_participant(self, mock_db):
