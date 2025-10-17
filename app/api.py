@@ -157,9 +157,9 @@ def get_championship_results(season_name, gender):
                 }
             club_points[org_club]["race_points"][race["name"]] = "ORG"
 
-        # Get all clubs that have ever participated
+        # Get all clubs that have ever participated (reuse results from above)
         all_clubs = set()
-        for result in database.get_race_results(season_name, race["name"]):
+        for result in results:
             club = result.get("participant", {}).get("club")
             if club:
                 all_clubs.add(club)
