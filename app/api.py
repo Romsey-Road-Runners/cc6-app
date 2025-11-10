@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, make_response, request
 
 import database
 from auth import login_required
@@ -9,7 +9,9 @@ api = Blueprint("api", __name__)
 @api.route("/clubs")
 def get_clubs():
     """API endpoint to get running clubs"""
-    return jsonify(database.get_clubs())
+    response = make_response(jsonify(database.get_clubs()))
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/participants")
@@ -29,7 +31,9 @@ def get_participants_api():
 def get_participant_results(participant_id):
     """API endpoint to get all results for a participant"""
     results = database.get_participant_results(participant_id)
-    return jsonify(results)
+    response = make_response(jsonify(results))
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/seasons")
@@ -56,13 +60,17 @@ def get_seasons():
                 past_races.sort(key=lambda x: x.get("date", ""), reverse=True)
                 default_race = past_races[0]["name"]
 
-    return jsonify(
-        {
-            "seasons": seasons,
-            "default_season": default_season,
-            "default_race": default_race,
-        }
+    response = make_response(
+        jsonify(
+            {
+                "seasons": seasons,
+                "default_season": default_season,
+                "default_race": default_race,
+            }
+        )
     )
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/seasons/<season_name>")
@@ -73,13 +81,17 @@ def get_season_with_races(season_name):
         return jsonify({"error": "Season not found"}), 404
 
     races = database.get_races_by_season(season_name)
-    return jsonify(
-        {
-            "name": season_name,
-            "age_category_size": season.get("age_category_size", 5),
-            "races": races,
-        }
+    response = make_response(
+        jsonify(
+            {
+                "name": season_name,
+                "age_category_size": season.get("age_category_size", 5),
+                "races": races,
+            }
+        )
     )
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/races/<season_name>/<race_name>")
@@ -108,13 +120,19 @@ def get_race_with_results(season_name, race_name):
             r for r in results if r.get("participant", {}).get("gender") == gender
         ]
 
-    return jsonify(
-        {
-            "season": season_name,
-            "name": race_name,
-            "results": results,
-        }
+    response = make_response(
+        jsonify(
+            {
+                "season": season_name,
+                "name": race_name,
+                "results": results,
+            }
+        )
     )
+
+    # Cache for 1 hour (race results don't change often)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/championship/<season_name>/<gender>")
@@ -251,16 +269,22 @@ def get_championship_results(season_name, gender):
 
     standings = qualified_clubs + disqualified_clubs
 
-    return jsonify(
-        {
-            "season": season_name,
-            "gender": gender,
-            "championship_type": "team",
-            "championship_name": f"{gender} Team Championship",
-            "races": races,
-            "standings": standings,
-        }
+    response = make_response(
+        jsonify(
+            {
+                "season": season_name,
+                "gender": gender,
+                "championship_type": "team",
+                "championship_name": f"{gender} Team Championship",
+                "races": races,
+                "standings": standings,
+            }
+        )
     )
+
+    # Cache for 1 hour (championship calculations are expensive)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @api.route("/individual-championship/<season_name>/<gender>")
@@ -344,15 +368,21 @@ def get_individual_championship_results(season_name, gender):
     if category:
         championship_name = f"{gender} {category} Individual Championship"
 
-    return jsonify(
-        {
-            "season": season_name,
-            "gender": gender,
-            "category": category,
-            "championship_type": "individual",
-            "championship_name": championship_name,
-            "races": races_with_results,
-            "standings": standings,
-            "best_of": actual_best_of,
-        }
+    response = make_response(
+        jsonify(
+            {
+                "season": season_name,
+                "gender": gender,
+                "category": category,
+                "championship_type": "individual",
+                "championship_name": championship_name,
+                "races": races_with_results,
+                "standings": standings,
+                "best_of": actual_best_of,
+            }
+        )
     )
+
+    # Cache for 1 hour (championship calculations are expensive)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
