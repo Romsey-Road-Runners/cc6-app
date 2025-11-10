@@ -1,9 +1,21 @@
 from flask import Blueprint, jsonify, request
+from flask_cors import CORS
 
 import database
 from auth import login_required
 
 api = Blueprint("api", __name__)
+
+# Enable CORS for public APIs with subdomain wildcard
+CORS(
+    api,
+    origins=[
+        "https://*.cc6.co.uk",
+        "https://*.rr10.org.uk",
+        "http://localhost:*",  # For development
+        "https://localhost:*",  # For HTTPS development
+    ],
+)
 
 
 @api.route("/clubs")
