@@ -99,7 +99,7 @@ function App() {
       <nav className="bg-white dark:bg-gray-900 shadow-lg sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <img
                 src="/cc6-slogan-black.png"
                 alt="CC6 Logo"
