@@ -9,14 +9,14 @@
     "@testing-library/user-event": "^13.5.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
-    "eject": "react-scripts eject",
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
     "format": "prettier --write 'src/**/*.{js,css}'",
     "format:check": "prettier --check 'src/**/*.{js,css}'",
     "lint": "eslint 'src/**/*.js'",
@@ -49,7 +49,7 @@
     ]
   },
   "devDependencies": {
-    "@craco/craco": "^7.1.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -57,7 +57,8 @@
     "lint-staged": "^16.2.6",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
-    "tailwindcss": "^3.4.18"
+    "tailwindcss": "^3.4.18",
+    "vite": "^7.2.2"
   },
   "lint-staged": {
     "src/**/*.{js,css}": [
