@@ -25,9 +25,13 @@ function App() {
     return false; // Default to light mode in test environment
   });
 
-  // Apply dark mode class to body
+  // Apply dark mode class to html element for Tailwind
   useEffect(() => {
-    document.body.className = darkMode ? 'dark-mode' : '';
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);
 
@@ -89,113 +93,169 @@ function App() {
   }, [selectedSeason, selectedRace, selectedGender, selectedCategory]);
 
   return (
-    <div className="App">
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <img src="/cc6-slogan-black.png" alt="CC6 Logo" className="logo" />
-          </div>
-          <div className="nav-menu">
-            <a href="#results" className="nav-link">
-              Results
-            </a>
-            <a href="#championships" className="nav-link">
-              Championships
-            </a>
-            <button
-              className="theme-toggle"
-              onClick={() => setDarkMode(!darkMode)}
-              aria-label="Toggle dark mode"
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark' : ''}`}
+    >
+      <nav className="bg-white dark:bg-gray-900 shadow-lg sticky top-0 z-50 transition-colors duration-300">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0">
+              <img
+                src="/cc6-slogan-black.png"
+                alt="CC6 Logo"
+                className="h-10 w-auto"
+              />
+            </div>
+            <div className="flex items-center space-x-8">
+              <a
+                href="#results"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Results
+              </a>
+              <a
+                href="#championships"
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Championships
+              </a>
+              <button
+                className="p-2 rounded-full border-2 border-current hover:scale-110 transition-transform duration-200"
+                onClick={() => setDarkMode(!darkMode)}
+                aria-label="Toggle dark mode"
+              >
+                {darkMode ? '☀️' : '🌙'}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="main-content">
-        <h1>Race Results</h1>
+      <main className="bg-gray-50 dark:bg-gray-800 min-h-screen transition-colors duration-300">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-center text-gray-900 dark:text-white mb-8">
+            Race Results
+          </h1>
 
-        <div className="filters">
-          <select
-            value={selectedSeason}
-            onChange={(e) => setSelectedSeason(e.target.value)}
-          >
-            <option value="">Select Season</option>
-            {seasons.map((season) => (
-              <option key={season} value={season}>
-                {season}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            <select
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select Season</option>
+              {seasons.map((season) => (
+                <option key={season} value={season}>
+                  {season}
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={selectedRace}
-            onChange={(e) => setSelectedRace(e.target.value)}
-            disabled={!races.length}
-          >
-            <option value="">Select Race</option>
-            {races.map((race) => (
-              <option key={race.name} value={race.name}>
-                {race.name} ({race.date})
-              </option>
-            ))}
-          </select>
+            <select
+              value={selectedRace}
+              onChange={(e) => setSelectedRace(e.target.value)}
+              disabled={!races.length}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+            >
+              <option value="">Select Race</option>
+              {races.map((race) => (
+                <option key={race.name} value={race.name}>
+                  {race.name} ({race.date})
+                </option>
+              ))}
+            </select>
 
-          <select
-            value={selectedGender}
-            onChange={(e) => setSelectedGender(e.target.value)}
-          >
-            <option value="">All Genders</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
+            <select
+              value={selectedGender}
+              onChange={(e) => setSelectedGender(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
 
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {loading && <p>Loading results...</p>}
-
-        {results.length > 0 && (
-          <div className="results">
-            <h2>{selectedRace} Results</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Position</th>
-                  <th>Name</th>
-                  <th>Gender</th>
-                  <th>Category</th>
-                  <th>Club</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((result, index) => (
-                  <tr key={result.finish_token}>
-                    <td>{index + 1}</td>
-                    <td>
-                      {result.participant?.first_name}{' '}
-                      {result.participant?.last_name}
-                    </td>
-                    <td>{result.participant?.gender}</td>
-                    <td>{result.participant?.age_category}</td>
-                    <td>{result.participant?.club}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+
+          {loading && (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Loading results...
+              </p>
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  {selectedRace} Results
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Position
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Gender
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Club
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {results.map((result, index) => (
+                      <tr
+                        key={result.finish_token}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {result.participant?.first_name}{' '}
+                          {result.participant?.last_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {result.participant?.gender}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {result.participant?.age_category}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {result.participant?.club}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
