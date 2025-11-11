@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import RaceResults from './components/RaceResults';
 import Championships from './components/Championships';
+import Registration from './components/Registration';
 import './App.css';
 
 function App() {
@@ -54,6 +55,12 @@ function App() {
                 >
                   Championships
                 </Link>
+                <Link
+                  to="/register"
+                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
+                >
+                  Register
+                </Link>
                 <button
                   className="p-2 rounded-full border-2 border-current hover:scale-110 transition-transform duration-200"
                   onClick={() => setDarkMode(!darkMode)}
@@ -70,6 +77,7 @@ function App() {
           <Routes>
             <Route path="/" element={<RaceResults />} />
             <Route path="/championships" element={<Championships />} />
+            <Route path="/register" element={<Registration />} />
           </Routes>
         </main>
       </div>
