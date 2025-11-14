@@ -64,7 +64,7 @@ jobs:
         run: npm run format:check
       - name: Run frontend tests
         working-directory: ./frontend
-        run: npm test -- --coverage --watchAll=false
+        run: npm test -- --coverage
 
   deploy:
     name: Deploy to Google Cloud Run
