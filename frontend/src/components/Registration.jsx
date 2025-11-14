@@ -74,7 +74,7 @@ function Registration() {
         setMessage(data.error || 'Registration failed. Please try again.');
         setMessageType('error');
       }
-    } catch (error) {
+    } catch {
       setMessage('Network error. Please try again.');
       setMessageType('error');
     } finally {

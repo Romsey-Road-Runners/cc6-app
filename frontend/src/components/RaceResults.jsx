@@ -51,13 +51,14 @@ function RaceResults() {
   // Load results when race or filters change
   useEffect(() => {
     if (selectedSeason && selectedRace) {
-      setLoading(true);
       const params = new URLSearchParams();
       if (selectedGender) params.append('gender', selectedGender);
       if (selectedCategory) params.append('category', selectedCategory);
 
       const url = `${API_BASE}/api/races/${selectedSeason}/${selectedRace}${params.toString() ? '?' + params.toString() : ''}`;
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoading(true);
       fetch(url)
         .then((res) => res.json())
         .then((data) => {
@@ -81,8 +82,8 @@ function RaceResults() {
         >
           <option value="">Select Season</option>
           {seasons.map((season) => (
-            <option key={season} value={season}>
-              {season}
+            <option key={season.name || season} value={season.name || season}>
+              {season.name || season}
             </option>
           ))}
         </select>
