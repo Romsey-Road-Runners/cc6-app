@@ -170,8 +170,13 @@ class SeasonList(Resource):
 
 @api.route("/seasons/<season_name>")
 class Season(Resource):
-    @api.doc("get_season")
-    @api.param("season_name", "Season name")
+    @api.doc(
+        "get_season",
+        description="Get season details. Use /seasons endpoint to get list of available season names.",
+    )
+    @api.param(
+        "season_name", "Season name (get available seasons from /seasons endpoint)"
+    )
     @api.marshal_with(season_model)
     def get(self, season_name):
         """Get season with nested races"""
@@ -189,9 +194,17 @@ class Season(Resource):
 
 @api.route("/seasons/<season_name>/races/<race_name>")
 class RaceResults(Resource):
-    @api.doc("get_race_results")
-    @api.param("season_name", "Season name")
-    @api.param("race_name", "Race name")
+    @api.doc(
+        "get_race_results",
+        description="Get race results. Use /seasons endpoint to get available season names, then /seasons/{season_name} to get race names.",
+    )
+    @api.param(
+        "season_name", "Season name (get available seasons from /seasons endpoint)"
+    )
+    @api.param(
+        "race_name",
+        "Race name (get available races from /seasons/{season_name} endpoint)",
+    )
     @api.param("gender", "Gender filter", type="string")
     @api.param("category", "Age category filter", type="string")
     @api.param("showMissingData", "Show results with missing data", type="boolean")
@@ -226,9 +239,20 @@ class RaceResults(Resource):
 
 @api.route("/seasons/<season_name>/championship/team")
 class TeamChampionship(Resource):
-    @api.doc("get_team_championship")
-    @api.param("season_name", "Season name")
-    @api.param("gender", "Gender (required)", required=True)
+    @api.doc(
+        "get_team_championship",
+        description="Get team championship standings. Use /seasons endpoint to get available season names.",
+    )
+    @api.param(
+        "season_name", "Season name (get available seasons from /seasons endpoint)"
+    )
+    @api.param(
+        "gender",
+        "Gender (required)",
+        type="string",
+        required=True,
+        enum=["Male", "Female"],
+    )
     @api.marshal_with(championship_model)
     def get(self, season_name):
         """Get team championship standings"""
@@ -380,9 +404,20 @@ class TeamChampionship(Resource):
 
 @api.route("/seasons/<season_name>/championship/individual")
 class IndividualChampionship(Resource):
-    @api.doc("get_individual_championship")
-    @api.param("season_name", "Season name")
-    @api.param("gender", "Gender (required)", required=True)
+    @api.doc(
+        "get_individual_championship",
+        description="Get individual championship standings. Use /seasons endpoint to get available season names.",
+    )
+    @api.param(
+        "season_name", "Season name (get available seasons from /seasons endpoint)"
+    )
+    @api.param(
+        "gender",
+        "Gender (required)",
+        type="string",
+        required=True,
+        enum=["Male", "Female"],
+    )
     @api.param("category", "Age category filter", type="string")
     @api.marshal_with(championship_model)
     def get(self, season_name):
