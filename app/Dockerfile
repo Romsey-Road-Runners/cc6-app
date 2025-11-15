@@ -27,7 +27,7 @@ WORKDIR /app
 RUN apk add --no-cache libffi
 
 # Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.43/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
