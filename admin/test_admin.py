@@ -373,6 +373,212 @@ class TestAdmin(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         mock_add_result.assert_called_once()
 
+    @patch("database.is_admin_email")
+    @patch("database.get_participants")
+    def test_export_participants_with_auth(self, mock_get_participants, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_participants.return_value = {
+            "participants": [
+                {
+                    "barcode": "A123456",
+                    "first_name": "John",
+                    "last_name": "Doe",
+                    "gender": "Male",
+                    "date_of_birth": "1990-01-01",
+                    "club": "Test Club",
+                }
+            ]
+        }
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/export_participants")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "text/csv")
+
+    def test_export_participants_no_auth(self):
+        response = self.client.get("/export_participants")
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.remove_admin_email")
+    def test_remove_admin_with_auth(self, mock_remove, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_remove.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/remove_admin", data={"email": "old@example.com"})
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_season")
+    def test_edit_season_get(self, mock_get_season, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_season.return_value = {"age_category_size": 5}
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/edit_season/2024")
+        self.assertEqual(response.status_code, 200)
+
+    @patch("database.is_admin_email")
+    @patch("database.clear_default_seasons")
+    @patch("database.update_season")
+    def test_update_season_with_auth(self, mock_update, mock_clear, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/edit_season/2024", data={"age_category_size": "10", "is_default": "true"}
+        )
+        self.assertEqual(response.status_code, 302)
+        mock_clear.assert_called_once()
+        mock_update.assert_called_once()
+
+    @patch("database.is_admin_email")
+    @patch("database.delete_season")
+    def test_delete_season_with_auth(self, mock_delete, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/delete_season/2024")
+        self.assertEqual(response.status_code, 302)
+        mock_delete.assert_called_once()
+
+    @patch("database.is_admin_email")
+    @patch("database.delete_all_race_results")
+    def test_delete_all_race_results_with_auth(self, mock_delete, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/delete_all_race_results/season/race")
+        self.assertEqual(response.status_code, 302)
+        mock_delete.assert_called_once()
+
+    @patch("database.is_admin_email")
+    @patch("database.delete_race_result")
+    def test_delete_race_result_with_auth(self, mock_delete, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post("/delete_race_result/season/race/1")
+        self.assertEqual(response.status_code, 302)
+        mock_delete.assert_called_once()
+
+    @patch("database.is_admin_email")
+    @patch("database.get_season")
+    @patch("database.get_participant")
+    @patch("database.add_race_results_batch")
+    def test_process_upload_results_with_file(
+        self, mock_batch, mock_get_participant, mock_get_season, mock_is_admin
+    ):
+        mock_is_admin.return_value = True
+        mock_get_season.return_value = {"start_date": "2024-01-01"}
+        mock_get_participant.return_value = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "gender": "Male",
+            "date_of_birth": "1990-01-01",
+            "club": "Test Club",
+        }
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        from io import BytesIO
+
+        csv_data = b"ID,Pos\nA123456,1\n"
+
+        response = self.client.post(
+            "/process_upload_results",
+            data={
+                "season_name": "2024",
+                "race_name": "Test Race",
+                "file": (BytesIO(csv_data), "results.csv"),
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.validate_barcode")
+    @patch("database.club_exists")
+    @patch("database.participant_exists")
+    @patch("database.update_participant")
+    def test_edit_participant_with_auth(
+        self, mock_update, mock_exists, mock_club_exists, mock_validate, mock_is_admin
+    ):
+        mock_is_admin.return_value = True
+        mock_validate.return_value = True
+        mock_club_exists.return_value = True
+        mock_exists.return_value = False
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        data = {
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "gender": "F",
+            "dob": "1990-01-01",
+            "barcode": "A654321",
+            "club": "Test Club",
+        }
+        response = self.client.post("/edit_participant/test_id", data=data)
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_season")
+    @patch("database.get_participant")
+    def test_add_manual_result_participant_not_found(
+        self, mock_get_participant, mock_get_season, mock_is_admin
+    ):
+        mock_is_admin.return_value = True
+        mock_get_season.return_value = {"start_date": "2024-01-01"}
+        mock_get_participant.return_value = None
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_manual_result",
+            data={
+                "season_name": "2024",
+                "race_name": "Test Race",
+                "barcode": "A123456",
+                "position_token": "P0001",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    def test_add_manual_result_missing_fields(self, mock_is_admin):
+        mock_is_admin.return_value = True
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.post(
+            "/add_manual_result",
+            data={
+                "season_name": "2024",
+                "race_name": "Test Race",
+                # Missing barcode and position_token
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
 
 if __name__ == "__main__":
     unittest.main()

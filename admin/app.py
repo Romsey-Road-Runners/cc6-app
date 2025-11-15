@@ -259,7 +259,7 @@ def delete_club(club_name):
 
 @app.route("/edit_participant/<participant_id>")
 @login_required
-def edit_participant_get(participant_id):
+def edit_participant(participant_id):
     """Edit participant form"""
     participant = database.get_participant(participant_id)
     clubs = database.get_clubs()
@@ -517,7 +517,8 @@ def export_participants():
 
     from flask import make_response
 
-    participants = database.get_participants()
+    result = database.get_participants()
+    participants = result["participants"] if isinstance(result, dict) else result
 
     output = io.StringIO()
     writer = csv.writer(output)

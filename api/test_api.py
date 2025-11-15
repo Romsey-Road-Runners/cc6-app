@@ -249,6 +249,238 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.json["default_race"])
 
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_organizing_clubs_logic(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test organizing clubs logic in championship"""
+        mock_get_races.return_value = [
+            {"name": "Race1", "organising_clubs": ["Club A"]}
+        ]
+        mock_get_results.return_value = [
+            {"participant": {"first_name": "John", "gender": "Male", "club": "Club A"}},
+            {"participant": {"first_name": "Jane", "gender": "Male", "club": "Club B"}},
+        ]
+
+        response = self.client.get("/seasons/season/championship/team?gender=Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify organizing club gets "ORG" status
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertEqual(club_a_data["race_points"]["Race1"], "ORG")
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_sufficient_runners(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test sufficient runners logic"""
+        mock_get_races.return_value = [{"name": "Race1", "organising_clubs": []}]
+        # Return sufficient runners for Male (4+)
+        mock_get_results.return_value = [
+            {
+                "participant": {
+                    "first_name": "John1",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John2",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John3",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John4",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+        ]
+
+        response = self.client.get("/seasons/season/championship/team?gender=Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify club gets points (not DQ) with sufficient runners
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertNotEqual(club_a_data["total_points"], "DQ")
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_championship_no_organizing_adjustment(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test no organizing race adjustment"""
+        mock_get_races.return_value = [
+            {"name": "Race1", "organising_clubs": ["Other Club"]},
+            {"name": "Race2", "organising_clubs": ["Other Club"]},
+        ]
+        # Return sufficient runners for Male (4+) to get points in both races
+        mock_get_results.return_value = [
+            {
+                "participant": {
+                    "first_name": "John1",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John2",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John3",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+            {
+                "participant": {
+                    "first_name": "John4",
+                    "gender": "Male",
+                    "club": "Club A",
+                }
+            },
+        ]
+
+        response = self.client.get("/seasons/season/championship/team?gender=Male")
+        self.assertEqual(response.status_code, 200)
+        # Verify club gets points and no adjustment is applied (Club A doesn't organize)
+        standings = response.json["standings"]
+        club_a_data = next((s for s in standings if s["name"] == "Club A"), None)
+        self.assertIsNotNone(club_a_data)
+        self.assertNotEqual(club_a_data["total_points"], "DQ")
+        # No adjustment since Club A doesn't organize: 4 participants × 2 races = 8 points
+        self.assertEqual(club_a_data["total_points"], 8)
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_individual_championship_name_filtering(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test individual championship name filtering"""
+        mock_get_races.return_value = [
+            {"name": "Race1"},
+            {"name": "Race2"},
+            {"name": "Race3"},
+        ]
+        mock_get_results.side_effect = [
+            # Race 1
+            [
+                {
+                    "participant": {
+                        "first_name": "",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Empty first name
+            # Race 2
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Empty last name
+            # Race 3
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],  # Valid name
+        ]
+
+        response = self.client.get(
+            "/seasons/season/championship/individual?gender=Male"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should only include valid names
+        standings = response.json["standings"]
+        self.assertEqual(len(standings), 0)  # No one has 3+ races with valid names
+
+    @patch("database.get_races_by_season")
+    @patch("database.get_race_results")
+    def test_api_individual_championship_sufficient_races(
+        self, mock_get_results, mock_get_races
+    ):
+        """Test individual championship sufficient races logic"""
+        mock_get_races.return_value = [
+            {"name": "Race1"},
+            {"name": "Race2"},
+            {"name": "Race3"},
+        ]
+        mock_get_results.side_effect = [
+            # Race 1
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+            # Race 2
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+            # Race 3
+            [
+                {
+                    "participant": {
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "gender": "Male",
+                        "club": "Club A",
+                    }
+                }
+            ],
+        ]
+
+        response = self.client.get(
+            "/seasons/season/championship/individual?gender=Male"
+        )
+        self.assertEqual(response.status_code, 200)
+        # Should include participant with 3+ races
+        standings = response.json["standings"]
+        self.assertEqual(len(standings), 1)
+        self.assertEqual(standings[0]["name"], "John Doe")
+
 
 if __name__ == "__main__":
     unittest.main()
