@@ -18,4 +18,4 @@ COPY shared_libs/ ../shared_libs/
 # Copy application files
 COPY admin/ .
 
-CMD ["python", "-m", "pytest", "test_admin.py", "-v", "--cov=.", "--cov-report=term-missing"]
+CMD ["python", "-m", "pytest", "test_admin.py", "../shared_libs/test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]
