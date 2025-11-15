@@ -9,6 +9,7 @@ from flask import (
     session,
     url_for,
 )
+from flask_compress import Compress
 
 import database
 from api import api
@@ -16,6 +17,7 @@ from auth import init_oauth, login_required
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
+Compress(app)
 
 # Initialize OAuth
 google = init_oauth(app)

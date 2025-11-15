@@ -11,6 +11,7 @@ Authlib = "*"
 flask = "*"
 coverage = "*"
 flask-cors = "*"
+flask-compress = "*"
 
 [dev-packages]
 pytest = "*"
