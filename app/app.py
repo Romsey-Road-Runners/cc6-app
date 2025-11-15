@@ -12,7 +12,7 @@ from flask import (
 from flask_compress import Compress
 
 import database
-from api import api
+from api import api_bp
 from auth import init_oauth, login_required
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ Compress(app)
 google = init_oauth(app)
 
 # Register API blueprint
-app.register_blueprint(api, url_prefix="/api")
+app.register_blueprint(api_bp, url_prefix="/api")
 
 
 # Initialize data on startup

@@ -12,6 +12,7 @@ flask = "*"
 coverage = "*"
 flask-cors = "*"
 flask-compress = "*"
+flask-restx = "*"
 
 [dev-packages]
 pytest = "*"
