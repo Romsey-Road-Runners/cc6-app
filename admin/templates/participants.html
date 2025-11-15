@@ -70,7 +70,7 @@
                 <td>{{ participant.get('last_name') }}</td>
                 <td>{{ participant.get('gender') }}</td>
                 <td>{{ participant.get('date_of_birth') }}</td>
-                <td><a href="{{ url_for('participant_results', participant_id=participant.get('barcode')) }}" style="color: #007cba; text-decoration: none;">{{ participant.get('barcode') }}</a></td>
+                <td>{{ participant.get('barcode') }}</td>
                 <td>{{ participant.get('club') }}</td>
                 <td>{{ participant.get('created_at').strftime('%Y-%m-%d %H:%M') if participant.get('created_at') else 'N/A' }}</td>
                 <td>{{ participant.get('updated_at').strftime('%Y-%m-%d %H:%M') if participant.get('updated_at') else 'N/A' }}</td>
