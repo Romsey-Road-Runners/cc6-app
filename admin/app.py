@@ -508,6 +508,54 @@ def delete_race_result(season_name, race_name, finish_token):
     return redirect(url_for("race_results", season=season_name, race=race_name))
 
 
+@app.route("/export_participants")
+@login_required
+def export_participants():
+    """Export participants to CSV"""
+    import csv
+    import io
+
+    from flask import make_response
+
+    participants = database.get_participants()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write header
+    writer.writerow(["ID", "Fname", "LName", "Gender", "DOB", "Club"])
+
+    # Write participant data
+    for participant in participants:
+        # Format date from YYYY-MM-DD to dd/mm/yyyy
+        dob = participant.get("date_of_birth", "")
+        if dob:
+            try:
+                from datetime import datetime
+
+                date_obj = datetime.strptime(dob, "%Y-%m-%d")
+                dob = date_obj.strftime("%d/%m/%Y")
+            except ValueError:
+                pass  # Keep original format if parsing fails
+
+        writer.writerow(
+            [
+                participant.get("barcode", ""),
+                participant.get("first_name", ""),
+                participant.get("last_name", ""),
+                participant.get("gender", ""),
+                dob,
+                participant.get("club", ""),
+            ]
+        )
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=participants.csv"
+    response.headers["Content-type"] = "text/csv"
+
+    return response
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)
