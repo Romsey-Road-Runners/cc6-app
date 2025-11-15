@@ -46,7 +46,7 @@ cc6-app/
 - Google Cloud Project with billing enabled
 - OpenTofu installed
 - Docker (for local development)
-- Python 3.13 (for local development)
+- Python 3.14 (for local development)
 
 ### Deployment
 
