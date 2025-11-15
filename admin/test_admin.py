@@ -207,6 +207,8 @@ class TestAdmin(unittest.TestCase):
         response = self.client.get("/edit_club/test_club")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Edit Club", response.data)
+        self.assertIn(b"test_club", response.data)
+        self.assertIn(b"TC", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.update_club")
