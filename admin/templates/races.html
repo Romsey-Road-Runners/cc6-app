@@ -29,6 +29,15 @@
             <label for="seasonFilter">Filter by Season:</label>
             <select id="seasonFilter">
                 <option value="">All Seasons</option>
+                {% for race in races %}
+                    {% if race.season not in (seasons_list or []) %}
+                        {% set _ = (seasons_list or []).append(race.season) if seasons_list else None %}
+                        {% set seasons_list = [race.season] if not seasons_list else seasons_list %}
+                    {% endif %}
+                {% endfor %}
+                {% for season in races|map(attribute='season')|unique|sort %}
+                    <option value="{{ season }}">{{ season }}</option>
+                {% endfor %}
             </select>
         </div>
         <a href="{{ url_for('add_race') }}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Add New Race</a>
@@ -62,37 +71,14 @@
     <script>
         let allRaces = [];
         
-        // Fetch seasons and populate filter dropdown
-        fetch('/api/seasons')
-            .then(response => response.json())
-            .then(data => {
-                const select = document.getElementById('seasonFilter');
-                select.innerHTML = '<option value="">All Seasons</option>';
-                data.seasons.forEach(season => {
-                    const option = document.createElement('option');
-                    option.value = season;
-                    option.textContent = season;
-                    if (season === data.default_season) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-                
-                // Store all races for filtering
-                const rows = document.querySelectorAll('tbody tr');
-                allRaces = Array.from(rows).map(row => ({
-                    element: row,
-                    season: row.children[2].textContent
-                }));
-                
-                // Apply default filter if set
-                if (data.default_season) {
-                    filterRaces(data.default_season);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading seasons:', error);
-            });
+        // Initialize races for filtering
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('tbody tr');
+            allRaces = Array.from(rows).map(row => ({
+                element: row,
+                season: row.children[2].textContent
+            }));
+        });
         
         // Filter races by season
         function filterRaces(selectedSeason) {
