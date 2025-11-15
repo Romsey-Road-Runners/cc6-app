@@ -52,7 +52,7 @@
                 <td>{{ race.season }}</td>
                 <td>{{ race.organising_clubs | join(', ') if race.organising_clubs else '-' }}</td>
                 <td>
-                    <a href="{{ url_for('race_results', season_name=race.season, race_name=race.name) }}" style="color: #007bff;">View Results</a>
+                    <a href="{{ url_for('race_results', season=race.season, race=race.name) }}" style="color: #007bff;">View Results</a>
                 </td>
             </tr>
             {% endfor %}

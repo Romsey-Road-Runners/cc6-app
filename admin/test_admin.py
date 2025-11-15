@@ -67,6 +67,8 @@ class TestAdmin(unittest.TestCase):
 
         response = self.client.get("/admins")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Admin Emails", response.data)
+        self.assertIn(b"test@example.com", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.get_admin_emails")
@@ -91,15 +93,18 @@ class TestAdmin(unittest.TestCase):
 
     @patch("database.is_admin_email")
     @patch("database.get_seasons")
-    def test_seasons_with_auth(self, mock_get_seasons, mock_is_admin):
+    @patch("database.get_season")
+    def test_seasons_with_auth(self, mock_get_season, mock_get_seasons, mock_is_admin):
         mock_is_admin.return_value = True
         mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_season.return_value = {"age_category_size": 5}
 
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
         response = self.client.get("/seasons")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Seasons", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.create_season")
@@ -129,13 +134,17 @@ class TestAdmin(unittest.TestCase):
     def test_races_with_auth(self, mock_get_races, mock_get_seasons, mock_is_admin):
         mock_is_admin.return_value = True
         mock_get_seasons.return_value = ["2024 Season"]
-        mock_get_races.return_value = []
+        mock_get_races.return_value = [
+            {"name": "Test Race", "date": "2024-01-01", "organising_clubs": []}
+        ]
 
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
 
         response = self.client.get("/races")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Races", response.data)
+        self.assertIn(b"Test Race", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.create_race")
@@ -166,6 +175,7 @@ class TestAdmin(unittest.TestCase):
 
         response = self.client.get("/race_results/season/race")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Race Results", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.club_exists")
@@ -196,6 +206,7 @@ class TestAdmin(unittest.TestCase):
 
         response = self.client.get("/edit_club/test_club")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Edit Club", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.update_club")
@@ -246,6 +257,8 @@ class TestAdmin(unittest.TestCase):
 
         response = self.client.get("/edit_participant/A123456")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Edit Participant", response.data)
+        self.assertIn(b"John", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.delete_participant")
@@ -424,6 +437,7 @@ class TestAdmin(unittest.TestCase):
 
         response = self.client.get("/edit_season/2024")
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Edit Season", response.data)
 
     @patch("database.is_admin_email")
     @patch("database.clear_default_seasons")
@@ -578,6 +592,43 @@ class TestAdmin(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
+
+    def test_index_redirect(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_participants")
+    def test_participants_with_auth(self, mock_get_participants, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_participants.return_value = {
+            "participants": [],
+            "total_count": 0,
+            "page": 1,
+            "page_size": 50,
+            "total_pages": 0,
+        }
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/participants")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Registered Participants", response.data)
+
+    @patch("database.is_admin_email")
+    @patch("database.get_clubs")
+    def test_clubs_with_auth(self, mock_get_clubs, mock_is_admin):
+        mock_is_admin.return_value = True
+        mock_get_clubs.return_value = [{"name": "Test Club", "short_names": ["TC"]}]
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/clubs")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Running Clubs", response.data)
+        self.assertIn(b"Test Club", response.data)
 
 
 if __name__ == "__main__":
