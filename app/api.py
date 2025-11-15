@@ -44,7 +44,7 @@ def get_participant_results(participant_id):
     return jsonify(results)
 
 
-@api.route("/season")
+@api.route("/seasons")
 def get_seasons():
     """API endpoint to get seasons with IDs and default season"""
     seasons = database.get_seasons()
@@ -77,7 +77,7 @@ def get_seasons():
     )
 
 
-@api.route("/season/<season_name>")
+@api.route("/seasons/<season_name>")
 def get_season_with_races(season_name):
     """API endpoint to get season with nested races"""
     season = database.get_season(season_name)
@@ -94,7 +94,7 @@ def get_season_with_races(season_name):
     )
 
 
-@api.route("/season/<season_name>/race/<race_name>")
+@api.route("/seasons/<season_name>/races/<race_name>")
 def get_race_with_results(season_name, race_name):
     """API endpoint to get race with nested results"""
     results = database.get_race_results(season_name, race_name)
@@ -129,7 +129,7 @@ def get_race_with_results(season_name, race_name):
     )
 
 
-@api.route("/season/<season_name>/championship/<gender>")
+@api.route("/seasons/<season_name>/championship/<gender>")
 def get_championship_results(season_name, gender):
     """API endpoint to get championship standings"""
     races = database.get_races_by_season(season_name)
@@ -275,7 +275,7 @@ def get_championship_results(season_name, gender):
     )
 
 
-@api.route("/season/<season_name>/championship/individual")
+@api.route("/seasons/<season_name>/championship/individual")
 def get_individual_championship_results(season_name):
     """API endpoint to get individual championship standings"""
     season = database.get_season(season_name)
