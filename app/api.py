@@ -114,7 +114,7 @@ class ClubList(Resource):
 
 @api.route("/participants")
 class ParticipantList(Resource):
-    @api.doc("get_participants")
+    @api.doc("get_participants", doc=False)
     @api.param("page", "Page number", type="integer", default=1)
     @api.param("page_size", "Page size", type="integer", default=50)
     @api.param("search", "Search term", type="string")
