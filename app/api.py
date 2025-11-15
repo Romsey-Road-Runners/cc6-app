@@ -129,9 +129,14 @@ def get_race_with_results(season_name, race_name):
     )
 
 
-@api.route("/seasons/<season_name>/championship/<gender>")
-def get_championship_results(season_name, gender):
+@api.route("/seasons/<season_name>/championship/team")
+def get_championship_results(season_name):
     """API endpoint to get championship standings"""
+    gender = request.args.get("gender")
+
+    if not gender:
+        return jsonify({"error": "Gender parameter is required"}), 400
+
     races = database.get_races_by_season(season_name)
 
     if not races:
@@ -282,6 +287,9 @@ def get_individual_championship_results(season_name):
     gender = request.args.get("gender")
     category = request.args.get("category")
 
+    if not gender:
+        return jsonify({"error": "Gender parameter is required"}), 400
+
     races = database.get_races_by_season(season_name)
     if not races:
         return jsonify({"error": "No races found for season"}), 404
@@ -292,17 +300,12 @@ def get_individual_championship_results(season_name):
     for race in races:
         results = database.get_race_results(season_name, race["name"])
         # Filter by gender and valid participants
-        if gender:
-            gender_results = [
-                r
-                for r in results
-                if r.get("participant", {}).get("gender") == gender
-                and r.get("participant", {}).get("first_name")
-            ]
-        else:
-            gender_results = [
-                r for r in results if r.get("participant", {}).get("first_name")
-            ]
+        gender_results = [
+            r
+            for r in results
+            if r.get("participant", {}).get("gender") == gender
+            and r.get("participant", {}).get("first_name")
+        ]
 
         # Filter by category if specified
         if category:

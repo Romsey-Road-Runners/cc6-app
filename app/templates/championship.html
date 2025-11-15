@@ -145,20 +145,23 @@
             const type = document.querySelector('input[name="type"]:checked').value;
             const category = document.querySelector('input[name="category"]:checked')?.value || '';
             
-            if (!seasonId || !type) return;
-            if (type === 'team' && !gender) return;
+            if (!seasonId || !type || !gender) return;
             
             const container = document.getElementById('championshipContainer');
             container.innerHTML = '<div class="loading">Loading championship results...</div>';
             
             try {
-                let endpoint = type === 'individual' ? `/api/seasons/${seasonId}/championship/individual` : `/api/seasons/${seasonId}/championship/${gender}`;
+                let endpoint;
+                const params = new URLSearchParams();
                 if (type === 'individual') {
-                    const params = new URLSearchParams();
+                    endpoint = `/api/seasons/${seasonId}/championship/individual`;
                     if (category) params.append('category', category);
-                    if (gender) params.append('gender', gender);
-                    if (params.toString()) endpoint += `?${params.toString()}`;
+                    params.append('gender', gender);
+                } else {
+                    endpoint = `/api/seasons/${seasonId}/championship/team`;
+                    params.append('gender', gender);
                 }
+                if (params.toString()) endpoint += `?${params.toString()}`;
                 const response = await fetch(endpoint);
                 const championshipData = await response.json();
                                 
