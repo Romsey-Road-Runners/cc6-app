@@ -8,10 +8,13 @@ from auth import login_required
 api_bp = Blueprint("api", __name__)
 api = Api(
     api_bp,
-    doc="/api/",
+    doc="/",
     title="CC6 Race Series API",
     version="1.0",
-    description="API for managing race results and championships",
+    description="Public API for race and championship results",
+    spec_path="/openapi.json",
+    default="CC6 API",
+    default_label="CC6 Race Series Endpoints",
 )
 
 # Enable CORS for public APIs with subdomain wildcard
