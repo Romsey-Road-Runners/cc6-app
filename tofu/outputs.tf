@@ -18,3 +18,13 @@ output "custom_domain_dns" {
   value       = "CNAME app.cc6.co.uk -> ${google_cloud_run_domain_mapping.custom_domain.status[0].resource_records[0].rrdata}"
 }
 
+output "api_custom_domain_dns" {
+  description = "DNS record needed for custom domain"
+  value       = "CNAME api.running.cafe -> ${google_cloud_run_domain_mapping.api_custom_domain.status[0].resource_records[0].rrdata}"
+}
+
+output "admin_custom_domain_dns" {
+  description = "DNS record needed for custom domain"
+  value       = "CNAME admin.running.cafe -> ${google_cloud_run_domain_mapping.admin_custom_domain.status[0].resource_records[0].rrdata}"
+}
+
