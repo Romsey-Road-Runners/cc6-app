@@ -94,7 +94,7 @@ def get_season_with_races(season_name):
     )
 
 
-@api.route("/races/<season_name>/<race_name>")
+@api.route("/seasons/<season_name>/races/<race_name>")
 def get_race_with_results(season_name, race_name):
     """API endpoint to get race with nested results"""
     results = database.get_race_results(season_name, race_name)
@@ -129,7 +129,7 @@ def get_race_with_results(season_name, race_name):
     )
 
 
-@api.route("/championship/<season_name>/<gender>")
+@api.route("/seasons/<season_name>/championship/<gender>")
 def get_championship_results(season_name, gender):
     """API endpoint to get championship standings"""
     races = database.get_races_by_season(season_name)
@@ -275,10 +275,11 @@ def get_championship_results(season_name, gender):
     )
 
 
-@api.route("/individual-championship/<season_name>/<gender>")
-def get_individual_championship_results(season_name, gender):
+@api.route("/seasons/<season_name>/championship/individual")
+def get_individual_championship_results(season_name):
     """API endpoint to get individual championship standings"""
     season = database.get_season(season_name)
+    gender = request.args.get("gender")
     category = request.args.get("category")
 
     races = database.get_races_by_season(season_name)
@@ -291,12 +292,17 @@ def get_individual_championship_results(season_name, gender):
     for race in races:
         results = database.get_race_results(season_name, race["name"])
         # Filter by gender and valid participants
-        gender_results = [
-            r
-            for r in results
-            if r.get("participant", {}).get("gender") == gender
-            and r.get("participant", {}).get("first_name")
-        ]
+        if gender:
+            gender_results = [
+                r
+                for r in results
+                if r.get("participant", {}).get("gender") == gender
+                and r.get("participant", {}).get("first_name")
+            ]
+        else:
+            gender_results = [
+                r for r in results if r.get("participant", {}).get("first_name")
+            ]
 
         # Filter by category if specified
         if category:
@@ -321,6 +327,7 @@ def get_individual_championship_results(season_name, gender):
                     if name not in participant_results:
                         participant_results[name] = {
                             "club": club,
+                            "gender": participant.get("gender"),
                             "age_category": age_category,
                             "participant_id": participant.get("parkrun_barcode_id"),
                             "race_positions": {},
@@ -343,6 +350,7 @@ def get_individual_championship_results(season_name, gender):
                 {
                     "name": name,
                     "club": data["club"],
+                    "gender": data["gender"],
                     "age_category": data["age_category"],
                     "participant_id": data.get("participant_id"),
                     "total_points": total,
@@ -359,7 +367,6 @@ def get_individual_championship_results(season_name, gender):
     return jsonify(
         {
             "season": season_name,
-            "gender": gender,
             "category": category,
             "championship_type": "individual",
             "championship_name": championship_name,

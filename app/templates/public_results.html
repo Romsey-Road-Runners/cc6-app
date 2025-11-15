@@ -200,7 +200,7 @@
                 
                 const queryString = params.toString();
                 const seasonId = document.getElementById('seasonSelect').value;
-                const url = `/api/races/${seasonId}/${raceId}${queryString ? '?' + queryString : ''}`;
+                const url = `/api/seasons/${seasonId}/races/${raceId}${queryString ? '?' + queryString : ''}`;
                 
                 const response = await fetch(url);
                 const raceData = await response.json();
