@@ -7,15 +7,15 @@ test:
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-app:
-	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-app --build --abort-on-container-exit
+	cd $(ROOT_DIR) && FIRESTORE_PORT=8080 docker compose -f docker-compose.test.yml up test-app --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-api:
-	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-api --build --abort-on-container-exit
+	cd $(ROOT_DIR) && FIRESTORE_PORT=8081 docker compose -f docker-compose.test.yml up test-api --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-admin:
-	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-admin --build --abort-on-container-exit
+	cd $(ROOT_DIR) && FIRESTORE_PORT=8082 docker compose -f docker-compose.test.yml up test-admin --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-local:
