@@ -121,7 +121,7 @@ class TestAdmin(unittest.TestCase):
         response = self.client.get("/races")
         self.assertEqual(response.status_code, 302)
 
-    def test_add_race_requires_auth(self):
+    def test_add_race_post_requires_auth(self):
         response = self.client.post(
             "/add_race",
             data={"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"},
@@ -147,6 +147,29 @@ class TestAdmin(unittest.TestCase):
         self.assertIn(b"Test Race", response.data)
 
     @patch("database.is_admin_email")
+    @patch("database.get_seasons")
+    @patch("database.get_clubs")
+    def test_add_race_get_with_auth(
+        self, mock_get_clubs, mock_get_seasons, mock_is_admin
+    ):
+        mock_is_admin.return_value = True
+        mock_get_seasons.return_value = ["2024 Season"]
+        mock_get_clubs.return_value = [{"name": "Test Club", "short_names": []}]
+
+        with self.client.session_transaction() as sess:
+            sess["user"] = {"email": "test@example.com"}
+
+        response = self.client.get("/add_race")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Add Race", response.data)
+        self.assertIn(b"2024 Season", response.data)
+        self.assertIn(b"Test Club", response.data)
+
+    def test_add_race_get_requires_auth(self):
+        response = self.client.get("/add_race")
+        self.assertEqual(response.status_code, 302)
+
+    @patch("database.is_admin_email")
     @patch("database.create_race")
     def test_add_race_with_auth(self, mock_create, mock_is_admin):
         mock_is_admin.return_value = True
@@ -159,6 +182,7 @@ class TestAdmin(unittest.TestCase):
             data={"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"},
         )
         self.assertEqual(response.status_code, 302)
+        mock_create.assert_called_once_with("2024 Season", "Test Race", "2024-01-01")
 
     def test_race_results_requires_auth(self):
         response = self.client.get("/race_results/season/race")

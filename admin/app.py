@@ -169,9 +169,20 @@ def add_season():
     return redirect(url_for("seasons"))
 
 
-@app.route("/add_race", methods=["POST"])
+@app.route("/add_race")
 @login_required
 def add_race():
+    """Add race form"""
+    seasons = database.get_seasons()
+    clubs = database.get_clubs()
+    return render_template(
+        "add_race.html", seasons=seasons, clubs=clubs, user=session.get("user")
+    )
+
+
+@app.route("/add_race", methods=["POST"])
+@login_required
+def add_race_post():
     """Add new race"""
     name = request.form.get("name", "").strip()
     date = request.form.get("date", "").strip()
