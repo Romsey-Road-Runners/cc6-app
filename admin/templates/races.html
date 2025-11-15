@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Races</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Races</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div style="margin-bottom: 20px; display: flex; gap: 20px; align-items: center;">
+        <div>
+            <label for="seasonFilter">Filter by Season:</label>
+            <select id="seasonFilter">
+                <option value="">All Seasons</option>
+            </select>
+        </div>
+        <a href="{{ url_for('add_race') }}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Add New Race</a>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Race Name</th>
+                <th>Date</th>
+                <th>Season</th>
+                <th>Organising Clubs</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for race in races %}
+            <tr>
+                <td>{{ race.name }}</td>
+                <td>{{ race.date }}</td>
+                <td>{{ race.season }}</td>
+                <td>{{ race.organising_clubs | join(', ') if race.organising_clubs else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('race_results', season_name=race.season, race_name=race.name) }}" style="color: #007bff;">View Results</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <script>
+        let allRaces = [];
+        
+        // Fetch seasons and populate filter dropdown
+        fetch('/api/seasons')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('seasonFilter');
+                select.innerHTML = '<option value="">All Seasons</option>';
+                data.seasons.forEach(season => {
+                    const option = document.createElement('option');
+                    option.value = season;
+                    option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                
+                // Store all races for filtering
+                const rows = document.querySelectorAll('tbody tr');
+                allRaces = Array.from(rows).map(row => ({
+                    element: row,
+                    season: row.children[2].textContent
+                }));
+                
+                // Apply default filter if set
+                if (data.default_season) {
+                    filterRaces(data.default_season);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading seasons:', error);
+            });
+        
+        // Filter races by season
+        function filterRaces(selectedSeason) {
+            allRaces.forEach(race => {
+                if (!selectedSeason || race.season === selectedSeason) {
+                    race.element.style.display = '';
+                } else {
+                    race.element.style.display = 'none';
+                }
+            });
+        }
+        
+        // Add event listener for season filter
+        document.getElementById('seasonFilter').addEventListener('change', function() {
+            filterRaces(this.value);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CC6 Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'public_nav.html' %}
+    
+    <h1>CC6 Registration</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="/register">
+        <div class="form-group">
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Gender:</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="gender" value="Male" required>
+                    Male
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="gender" value="Female" required>
+                    Female
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="barcode">Parkrun ID:</label>
+            <input type="text" id="barcode" name="barcode" placeholder="A1234567" required>
+            <small>Format: A followed by 6-7 digits</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="club">Running Club:</label>
+            <select id="club" name="club" required>
+                <option value="">Loading clubs...</option>
+            </select>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+    
+    <script>
+        // Fetch clubs from API and populate dropdown
+        fetch('/api/clubs')
+            .then(response => response.json())
+            .then(clubs => {
+                const select = document.getElementById('club');
+                select.innerHTML = '<option value="">Select a club</option>';
+                clubs.forEach(club => {
+                    const option = document.createElement('option');
+                    option.value = club.name;
+                    option.textContent = club.name;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading clubs:', error);
+                document.getElementById('club').innerHTML = '<option value="">Error loading clubs</option>';
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Clubs</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Running Clubs</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_club') }}">
+        <div class="form-group">
+            <label for="club_name">Club Name:</label>
+            <input type="text" id="club_name" name="club_name" placeholder="Enter club name" required>
+        </div>
+        <div class="form-group">
+            <label for="short_names">Short Names (comma-separated):</label>
+            <input type="text" id="short_names" name="short_names" placeholder="Enter short names">
+        </div>
+        <button type="submit">Add Club</button>
+    </form>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Club Name</th>
+                <th>Short Names</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for club in clubs %}
+            <tr>
+                <td>{{ club.name }}</td>
+                <td>{{ club.short_names | join(', ') }}</td>
+                <td>
+                    <a href="{{ url_for('edit_club', club_id=club.name) }}" style="display: inline-block; padding: 5px 10px; background: var(--button-bg); color: white; text-decoration: none; border-radius: 4px; margin-right: 5px; font-size: 12px;">Edit</a>
+                    <form method="POST" action="{{ url_for('delete_club', club_id=club.name) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this club?')">
+                        <button type="submit" style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

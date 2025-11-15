@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Participant</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Edit Participant</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" value="{{ participant.first_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" value="{{ participant.last_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ participant.email or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label>Gender:</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="gender" value="Male" {{ 'checked' if participant.gender == 'Male' else '' }} required>
+                    Male
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="gender" value="Female" {{ 'checked' if participant.gender == 'Female' else '' }} required>
+                    Female
+                </label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" value="{{ participant.date_of_birth }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="barcode">Parkrun ID:</label>
+            <input type="text" id="barcode" name="barcode" value="{{ participant.barcode }}" required>
+            <small>Format: A followed by 6-7 digits</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="club">Running Club:</label>
+            <select id="club" name="club" required>
+                {% for club in clubs %}
+                <option value="{{ club.name }}" {{ 'selected' if participant.club == club.name else '' }}>{{ club.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit">Update Participant</button>
+    </form>
+</body>
+</html>

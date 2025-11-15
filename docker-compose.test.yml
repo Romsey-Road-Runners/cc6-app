@@ -5,18 +5,38 @@ services:
     ports:
       - "8080:8080"
 
-  test:
+  test-app:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      dockerfile: app/Dockerfile.test
     environment:
       - FLASK_SECRET_KEY=test-key
       - GOOGLE_CLOUD_PROJECT=test-project
       - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
-    volumes:
-      - .:/workspace
-    working_dir: /workspace/app
     depends_on:
       firestore-emulator:
         condition: service_started
-    command: sh -c "pip install pytest-cov coverage && python -m pytest test_app.py test_database.py -v --cov=. --cov-report=term-missing"
+
+  test-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_started
+
+  test-admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_started

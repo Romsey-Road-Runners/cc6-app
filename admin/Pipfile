@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+google-cloud-firestore = "*"
+google-cloud-secret-manager = "*"
+flask = "*"
+flask-compress = "*"
+Authlib = "*"
+
+[dev-packages]
+pytest = "*"
+black = "*"
+coverage = "*"
+pytest-cov = "*"
+ruff = "*"
+
+[requires]
+python_version = "3.14"

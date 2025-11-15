@@ -10,7 +10,7 @@ RUN pip install pipenv
 
 # Install deps
 COPY app/Pipfile app/Pipfile.lock ./
-RUN pipenv install --system --deploy
+RUN pipenv install --dev --system
 
 # Copy shared libraries
 COPY shared_libs/ ../shared_libs/
@@ -18,6 +18,4 @@ COPY shared_libs/ ../shared_libs/
 # Copy application files
 COPY app/ .
 
-EXPOSE 8080
-
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--preload", "--workers", "1", "--threads", "4", "app:app"]
+CMD ["python", "-m", "pytest", "test_app.py", "test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]

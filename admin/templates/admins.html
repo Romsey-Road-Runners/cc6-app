@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Emails</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Admin Emails</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_admin') }}">
+        <div class="form-group">
+            <label for="email">Admin Email:</label>
+            <input type="email" id="email" name="email" placeholder="Enter admin email" required>
+        </div>
+        <button type="submit">Add Admin</button>
+    </form>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for email in admin_emails %}
+            <tr>
+                <td>{{ email }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('remove_admin') }}" style="display: inline;" onsubmit="return confirm('Are you sure?')">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer;">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

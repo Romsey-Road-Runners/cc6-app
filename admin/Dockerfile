@@ -1,22 +1,23 @@
-FROM python:3.14-alpine
+FROM python:3.14-slim
 
-WORKDIR /app
+WORKDIR /workspace/admin
 
-# Install dependencies
-RUN apk add --no-cache libffi
+# Upgrade pip
 RUN pip install --upgrade pip
 
-# Copy requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install pipenv
+RUN pip install pipenv
 
-# Copy shared modules
-COPY ../shared_libs/database.py ./
-COPY ../shared_libs/auth.py ./
+# Install deps
+COPY admin/Pipfile admin/Pipfile.lock ./
+RUN pipenv install --system --deploy
 
-# Copy application
-COPY app.py .
+# Copy shared libraries
+COPY shared_libs/ ../shared_libs/
 
-EXPOSE 8081
+# Copy application files
+COPY admin/ .
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8081", "--preload", "--workers", "1", "--threads", "4", "app:app"]
+EXPOSE 8080
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--preload", "--workers", "1", "--threads", "4", "app:app"]

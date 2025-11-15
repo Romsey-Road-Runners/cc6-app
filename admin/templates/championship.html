@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Championship Results - CC6 Race Series</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .filters { margin: 20px 0; display: flex; flex-direction: column; gap: 20px; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-weight: bold; }
+        .radio-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start; }
+        .radio-group label { font-weight: normal; display: flex; align-items: center; gap: 8px; min-width: fit-content; padding: 5px 0; cursor: pointer; font-size: 14px; line-height: 1.2; }
+        .radio-group input[type="radio"] { margin: 0; flex-shrink: 0; width: 16px; height: 16px; }
+        @media (max-width: 768px) {
+            .radio-group { flex-direction: column; gap: 10px; }
+        }
+        select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'public_nav.html' %}
+    
+    <div class="container">
+        <h1>Championship Results</h1>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="seasonSelect">Season:</label>
+                <select id="seasonSelect">
+                    <option value="">Select Season</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Championship Type:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="type" value="team" checked> Team</label>
+                    <label><input type="radio" name="type" value="individual"> Individual</label>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <label>Gender:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="gender" value="Male" checked> Men</label>
+                    <label><input type="radio" name="gender" value="Female"> Women</label>
+                </div>
+            </div>
+
+            <div class="filter-group" id="categoryGroup" style="display: none;">
+                <label>Age Category:</label>
+                <div class="radio-group" id="categoryRadios">
+                    <label><input type="radio" name="category" value="" checked> All Categories</label>
+                </div>
+            </div>
+        </div>
+        
+        <button id="loadChampionship" disabled>Load Championship</button>
+    </div>
+    
+    <div id="championshipContainer" class="results-container" style="overflow-x: auto; width: calc(100vw - 40px); margin-left: calc(-50vw + 50% + 20px); text-align: center; padding: 0;"></div>
+    
+    <script>
+        let seasons = [];
+        
+        // Load seasons on page load
+        async function loadSeasons() {
+            try {
+                const response = await fetch('/api/seasons');
+                const data = await response.json();
+                seasons = data.seasons;
+                
+                const seasonSelect = document.getElementById('seasonSelect');
+                seasonSelect.innerHTML = '<option value="">Select Season</option>';
+                
+                seasons.forEach(season => {
+                    const option = document.createElement('option');
+                    option.value = season;
+                    option.textContent = season;
+                    if (season === data.default_season) {
+                        option.selected = true;
+                    }
+                    seasonSelect.appendChild(option);
+                });
+                
+                // Load categories for default season if available
+                if (data.default_season) {
+                    loadSeasonData(data.default_season);
+                }
+                
+                // Update load button state after loading seasons
+                updateLoadButton();
+            } catch (error) {
+                console.error('Error loading seasons:', error);
+            }
+        }
+        
+        // Load season data and generate categories
+        async function loadSeasonData(seasonId) {
+            if (!seasonId) {
+                document.getElementById('categoryGroup').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/seasons/${seasonId}`);
+                const data = await response.json();
+                
+                const categoryRadios = document.getElementById('categoryRadios');
+                categoryRadios.innerHTML = '<label><input type="radio" name="category" value="" checked> All Categories</label>';
+                
+                // Generate age categories based on age_category_size
+                const categorySize = data.age_category_size || 5;
+                const categories = generateAgeCategories(categorySize);
+                
+                categories.forEach(category => {
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = 'category';
+                    input.value = category;
+                    input.addEventListener('change', updateLoadButton);
+                    
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(' ' + category));
+                    categoryRadios.appendChild(label);
+                });
+                
+            } catch (error) {
+                console.error('Error loading season data:', error);
+            }
+        }
+        
+        // Load and display championship results
+        async function loadChampionship() {
+            const seasonId = document.getElementById('seasonSelect').value;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value || '';
+            
+            if (!seasonId || !type || !gender) return;
+            
+            const container = document.getElementById('championshipContainer');
+            container.innerHTML = '<div class="loading">Loading championship results...</div>';
+            
+            try {
+                let endpoint;
+                const params = new URLSearchParams();
+                if (type === 'individual') {
+                    endpoint = `/api/seasons/${seasonId}/championship/individual`;
+                    if (category) params.append('category', category);
+                    params.append('gender', gender);
+                } else {
+                    endpoint = `/api/seasons/${seasonId}/championship/team`;
+                    params.append('gender', gender);
+                }
+                if (params.toString()) endpoint += `?${params.toString()}`;
+                const response = await fetch(endpoint);
+                const championshipData = await response.json();
+                                
+                if (response.ok) {
+                    displayChampionship(championshipData);
+                } else {
+                    container.innerHTML = `<div class="error">Error: ${championshipData.error}</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading championship: ${error.message}</div>`;
+            }
+        }
+        
+        // Display championship results
+        function displayChampionship(data) {
+            const container = document.getElementById('championshipContainer');
+            
+            const isIndividual = data.championship_type === 'individual';
+            let html = `
+                <div class="race-info">
+                    <h2>${data.championship_name} - ${data.season}</h2>
+                    <p><strong>Scoring:</strong> ${isIndividual ? `Best ${data.best_of || 3} race results per individual` : 'Top ' + (data.gender === 'Male' ? '4' : '3') + ' finishers per club per race'}</p>
+                    <p><strong>Races included:</strong> ${data.races.length}</p>
+                    ${!isIndividual ? '<p><i><strong>Note:</strong> Clubs may be marked as disqualified (DQ) due to having insufficient runners in a race.</i></p>' : ''}
+                    ${!isIndividual ? '<p><i><strong>Note:</strong> The Total Rankings column will be adjusted if a club did not organise a race (for example due to cancellation or if the season is ongoing).</i></p>' : ''}
+                </div>
+            `;
+            
+            if (data.standings.length > 0) {
+                html += `
+                    <table style="margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>${isIndividual ? 'Name' : 'Club'}</th>
+                                ${isIndividual ? '<th>Category</th>' : ''}
+                                <th>Total Rankings</th>
+                `;
+                
+                // Add race columns
+                data.races.forEach(race => {
+                    html += `<th>${race.name}</th>`;
+                });
+                
+                html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                let currentPosition = 1;
+                data.standings.forEach((entry, index) => {
+                    // Handle joint positions for individual championships
+                    if (isIndividual && index > 0 && entry.total_points !== data.standings[index - 1].total_points) {
+                        currentPosition = index + 1;
+                    } else if (!isIndividual) {
+                        currentPosition = index + 1;
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${currentPosition}</td>
+                            <td>${isIndividual && entry.participant_id ? `<a href="/participant/${entry.participant_id}" style="color: #007bff; text-decoration: none;">${entry.name}</a>${entry.club ? ' (' + entry.club + ')' : ''}` : entry.name}</td>
+                            ${isIndividual ? `<td>${entry.age_category || '-'}</td>` : ''}
+                            <td><strong>${entry.total_points}</strong></td>
+                    `;
+                    
+                    // Add race points
+                    data.races.forEach(race => {
+                        if (isIndividual) {
+                            const position = entry.race_positions[race.name];
+                            if (position) {
+                                html += `<td>${position}</td>`;
+                            } else {
+                                html += `<td>-</td>`;
+                            }
+                        } else {
+                            const raceData = entry.race_points[race.name];
+                            if (raceData === 'ORG' || raceData === 'DQ') {
+                                html += `<td>${raceData}</td>`;
+                            } else if (raceData && raceData.rank) {
+                                const positions = raceData.positions.join(', ');
+                                html += `<td>${raceData.rank} (${positions} = ${raceData.points} points)</td>`;
+                            } else {
+                                html += `<td>-</td>`;
+                            }
+                        }
+                    });
+                    
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+            } else {
+                html += '<p>No championship results found.</p>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Event listeners
+        function updateLoadButton() {
+            const seasonId = document.getElementById('seasonSelect').value;
+            document.getElementById('loadChampionship').disabled = !seasonId;
+        }
+        
+        document.getElementById('seasonSelect').addEventListener('change', function() {
+            loadSeasonData(this.value);
+            updateLoadButton();
+        });
+        document.querySelectorAll('input[name="gender"]').forEach(radio => {
+            radio.addEventListener('change', updateLoadButton);
+        });
+        document.querySelectorAll('input[name="type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const categoryGroup = document.getElementById('categoryGroup');
+                categoryGroup.style.display = this.value === 'individual' ? 'block' : 'none';
+                updateLoadButton();
+            });
+        });
+        document.querySelector('input[name="category"]').addEventListener('change', updateLoadButton);
+        
+        document.getElementById('loadChampionship').addEventListener('click', loadChampionship);
+        
+        // Generate age categories based on size
+        function generateAgeCategories(size) {
+            const categories = ['Senior'];
+            for (let age = 40; age <= 80; age += size) {
+                categories.push(`V${age}`);
+            }
+            return categories;
+        }
+        
+
+        
+        // Load seasons on page load
+        loadSeasons();
+    </script>
+</body>
+</html>
