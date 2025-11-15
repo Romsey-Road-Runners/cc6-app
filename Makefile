@@ -7,20 +7,29 @@ test:
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-app:
-	cd $(ROOT_DIR) && FIRESTORE_PORT=8080 docker compose -f docker-compose.test.yml up test-app --build --abort-on-container-exit
+	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-app --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-api:
-	cd $(ROOT_DIR) && FIRESTORE_PORT=8081 docker compose -f docker-compose.test.yml up test-api --build --abort-on-container-exit
+	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-api --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-admin:
-	cd $(ROOT_DIR) && FIRESTORE_PORT=8082 docker compose -f docker-compose.test.yml up test-admin --build --abort-on-container-exit
+	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml up test-admin --build --abort-on-container-exit
 	cd $(ROOT_DIR) && docker compose -f docker-compose.test.yml down
 
 test-local:
 	cd $(ROOT_DIR)/app && python -m pytest test_app.py test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
 	cd $(ROOT_DIR)/api && python -m pytest test_api.py --cov=. --cov-report=term-missing
+	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py --cov=. --cov-report=term-missing
+
+test-local-app:
+	cd $(ROOT_DIR)/app && python -m pytest test_app.py test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
+
+test-local-api:
+	cd $(ROOT_DIR)/api && python -m pytest test_api.py --cov=. --cov-report=term-missing
+
+test-local-admin:
 	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py --cov=. --cov-report=term-missing
 
 test-coverage:
