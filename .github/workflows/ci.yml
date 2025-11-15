@@ -69,6 +69,8 @@ jobs:
   deploy:
     name: Deploy to Google Cloud Run
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-group
     needs: backend-test
     if: github.ref == 'refs/heads/main'
     steps:
