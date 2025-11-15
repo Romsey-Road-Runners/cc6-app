@@ -145,8 +145,7 @@
             const type = document.querySelector('input[name="type"]:checked').value;
             const category = document.querySelector('input[name="category"]:checked')?.value || '';
             
-            if (!seasonId || !type) return;
-            if (type === 'team' && !gender) return;
+            if (!seasonId || !type || !gender) return;
             
             const container = document.getElementById('championshipContainer');
             container.innerHTML = '<div class="loading">Loading championship results...</div>';

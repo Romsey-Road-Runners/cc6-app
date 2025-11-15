@@ -47,11 +47,18 @@ function Championships() {
     setLoading(true);
     let endpoint =
       championshipType === 'team'
-        ? `${API_BASE}/api/championship/${selectedSeason}/${selectedGender}`
-        : `${API_BASE}/api/individual-championship/${selectedSeason}/${selectedGender}`;
+        ? `${API_BASE}/api/seasons/${selectedSeason}/championship/${selectedGender}`
+        : `${API_BASE}/api/seasons/${selectedSeason}/championship/individual`;
 
+    const params = new URLSearchParams();
+    if (championshipType === 'individual') {
+      params.append('gender', selectedGender);
+    }
     if (championshipType === 'individual' && selectedCategory) {
-      endpoint += `?category=${encodeURIComponent(selectedCategory)}`;
+      params.append('category', selectedCategory);
+    }
+    if (params.toString()) {
+      endpoint += `?${params.toString()}`;
     }
 
     fetch(endpoint)
@@ -187,7 +194,7 @@ function Championships() {
 
         <button
           onClick={loadChampionship}
-          disabled={!selectedSeason}
+          disabled={!selectedSeason || !selectedGender}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           Load Championship

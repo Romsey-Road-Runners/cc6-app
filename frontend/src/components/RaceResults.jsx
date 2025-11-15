@@ -55,7 +55,7 @@ function RaceResults() {
       if (selectedGender) params.append('gender', selectedGender);
       if (selectedCategory) params.append('category', selectedCategory);
 
-      const url = `${API_BASE}/api/races/${selectedSeason}/${selectedRace}${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `${API_BASE}/api/seasons/${selectedSeason}/races/${selectedRace}${params.toString() ? '?' + params.toString() : ''}`;
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(true);

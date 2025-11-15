@@ -433,11 +433,16 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["championship_type"], "team")
 
+    def test_api_individual_championship_missing_gender(self):
+        response = self.client.get("/api/seasons/season/championship/individual")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Gender parameter is required", response.json["error"])
+
     @patch("database.get_races_by_season")
     def test_api_individual_championship_no_races(self, mock_get_races):
         mock_get_races.return_value = []
 
-        response = self.client.get("/api/seasons/season/championship/individual")
+        response = self.client.get("/api/seasons/season/championship/individual?gender=Male")
         self.assertEqual(response.status_code, 404)
 
     @patch("database.get_races_by_season")

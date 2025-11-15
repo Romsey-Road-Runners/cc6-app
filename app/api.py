@@ -282,6 +282,9 @@ def get_individual_championship_results(season_name):
     gender = request.args.get("gender")
     category = request.args.get("category")
 
+    if not gender:
+        return jsonify({"error": "Gender parameter is required"}), 400
+
     races = database.get_races_by_season(season_name)
     if not races:
         return jsonify({"error": "No races found for season"}), 404
@@ -292,17 +295,12 @@ def get_individual_championship_results(season_name):
     for race in races:
         results = database.get_race_results(season_name, race["name"])
         # Filter by gender and valid participants
-        if gender:
-            gender_results = [
-                r
-                for r in results
-                if r.get("participant", {}).get("gender") == gender
-                and r.get("participant", {}).get("first_name")
-            ]
-        else:
-            gender_results = [
-                r for r in results if r.get("participant", {}).get("first_name")
-            ]
+        gender_results = [
+            r
+            for r in results
+            if r.get("participant", {}).get("gender") == gender
+            and r.get("participant", {}).get("first_name")
+        ]
 
         # Filter by category if specified
         if category:
