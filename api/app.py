@@ -35,6 +35,8 @@ CORS(
     origins=[
         "https://*.cc6.co.uk",
         "https://*.rr10.org.uk",
+        "https://*.running.cafe",
+        "https://admin-347146726691.us-east1.run.app",
         "http://localhost:*",
         "https://localhost:*",
     ],
