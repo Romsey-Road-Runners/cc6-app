@@ -129,9 +129,14 @@ def get_race_with_results(season_name, race_name):
     )
 
 
-@api.route("/seasons/<season_name>/championship/<gender>")
-def get_championship_results(season_name, gender):
+@api.route("/seasons/<season_name>/championship/team")
+def get_championship_results(season_name):
     """API endpoint to get championship standings"""
+    gender = request.args.get("gender")
+
+    if not gender:
+        return jsonify({"error": "Gender parameter is required"}), 400
+
     races = database.get_races_by_season(season_name)
 
     if not races:

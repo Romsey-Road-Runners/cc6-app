@@ -45,17 +45,17 @@ function Championships() {
     if (!selectedSeason || !selectedGender) return;
 
     setLoading(true);
-    let endpoint =
-      championshipType === 'team'
-        ? `${API_BASE}/api/seasons/${selectedSeason}/championship/${selectedGender}`
-        : `${API_BASE}/api/seasons/${selectedSeason}/championship/individual`;
-
+    let endpoint;
     const params = new URLSearchParams();
-    if (championshipType === 'individual') {
+    if (championshipType === 'team') {
+      endpoint = `${API_BASE}/api/seasons/${selectedSeason}/championship/team`;
       params.append('gender', selectedGender);
-    }
-    if (championshipType === 'individual' && selectedCategory) {
-      params.append('category', selectedCategory);
+    } else {
+      endpoint = `${API_BASE}/api/seasons/${selectedSeason}/championship/individual`;
+      params.append('gender', selectedGender);
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
     }
     if (params.toString()) {
       endpoint += `?${params.toString()}`;
