@@ -9,12 +9,15 @@ jobs:
   backend-test:
     name: Backend Lint and Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [app, api, admin]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
       - name: Set up Python
@@ -22,25 +25,22 @@ jobs:
         with:
           python-version: "3.14"
           cache: "pip"
-          cache-dependency-path: app/Pipfile.lock
+          cache-dependency-path: ${{ matrix.app }}/Pipfile.lock
       - name: Install dependencies
-        working-directory: ./app
+        working-directory: ./${{ matrix.app }}
         run: |
           python -m pip install --upgrade pip
           pip install pipenv
           pipenv install --dev --system
       - name: Run lint check
-        working-directory: ./app
-        run: make lint-check
+        run: make lint-check-${{ matrix.app }}
       - name: Run format check
-        working-directory: ./app
-        run: make format-check
+        run: make format-check-${{ matrix.app }}
       - name: Run tests
-        working-directory: ./app
-        run: firebase emulators:exec --only firestore "make test-local"
+        run: firebase emulators:exec --only firestore "make test-local-${{ matrix.app }}"
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        if: always() && matrix.app == 'app'
         with:
           files: app/test-results.xml
 
@@ -72,6 +72,9 @@ jobs:
     concurrency:
       group: deploy-group
     needs: backend-test
+    strategy:
+      matrix:
+        app: [app, api, admin]
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v5
@@ -79,7 +82,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app
+          images: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ matrix.app }}
           tags: |
             type=ref,event=branch
             type=raw,value=latest
@@ -96,19 +99,22 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: "./app"
+          context: "./"
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
-          cache-to: type=registry,mode=max,image-manifest=true,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:cache
+          cache-from: type=registry,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ matrix.app }}:cache
+          cache-to: type=registry,mode=max,image-manifest=true,ref=gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ matrix.app }}:cache
+          file: ${{ matrix.app }}/Dockerfile
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
+        if: ${{ matrix.app == 'app' }}
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v3
+        if: ${{ matrix.app == 'app' }}
         with:
           service: cc6-app
           region: us-east1
-          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/cc6-app:${{ steps.meta.outputs.version }}
+          image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ matrix.app }}:${{ steps.meta.outputs.version }}

@@ -1,6 +1,6 @@
 FROM python:3.14-slim
 
-WORKDIR /workspace/app
+WORKDIR /workspace/admin
 
 # Upgrade pip
 RUN pip install --upgrade pip
@@ -9,14 +9,14 @@ RUN pip install --upgrade pip
 RUN pip install pipenv
 
 # Install deps
-COPY app/Pipfile app/Pipfile.lock ./
+COPY admin/Pipfile admin/Pipfile.lock ./
 RUN pipenv install --system --deploy
 
 # Copy shared libraries
 COPY shared_libs/ ../shared_libs/
 
 # Copy application files
-COPY app/ .
+COPY admin/ .
 
 EXPOSE 8080
 

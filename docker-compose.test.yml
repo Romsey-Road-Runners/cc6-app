@@ -1,0 +1,42 @@
+services:
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
+    ports:
+      - "8080:8080"
+
+  test-app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_started
+
+  test-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_started
+
+  test-admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile.test
+    environment:
+      - FLASK_SECRET_KEY=test-key
+      - GOOGLE_CLOUD_PROJECT=test-project
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+    depends_on:
+      firestore-emulator:
+        condition: service_started

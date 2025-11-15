@@ -1,6 +1,6 @@
 FROM python:3.14-slim
 
-WORKDIR /workspace/app
+WORKDIR /workspace/api
 
 # Upgrade pip
 RUN pip install --upgrade pip
@@ -9,13 +9,13 @@ RUN pip install --upgrade pip
 RUN pip install pipenv
 
 # Install deps
-COPY app/Pipfile app/Pipfile.lock ./
+COPY api/Pipfile api/Pipfile.lock ./
 RUN pipenv install --dev --system
 
 # Copy shared libraries
 COPY shared_libs/ ../shared_libs/
 
 # Copy application files
-COPY app/ .
+COPY api/ .
 
-CMD ["python", "-m", "pytest", "test_app.py", "test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]
+CMD ["python", "-m", "pytest", "test_api.py", "-v", "--cov=.", "--cov-report=term-missing"]

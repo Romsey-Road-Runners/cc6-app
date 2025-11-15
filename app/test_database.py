@@ -1,5 +1,9 @@
+import os
+import sys
 import unittest
 from unittest.mock import Mock, patch
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
 
 import database
 

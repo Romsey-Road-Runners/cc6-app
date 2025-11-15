@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Season</title>
+    <script src="{{ url_for('static', filename='dark-mode.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <img src="{{ url_for('static', filename='cc6-slogan-black.png') }}" alt="CC6 Logo" class="logo">
+    
+    {% include 'nav.html' %}
+
+    <h1>Edit Season: {{ season_name }}</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if 'successful' in message %}success{% else %}error{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('update_season', season_name=season_name) }}">
+        <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ season.get('start_date', '') if season else '' }}">
+        </div>
+        <div class="form-group">
+            <label>Age Categories:</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="age_category_size" value="5" {% if season and season.get('age_category_size', 5) == 5 %}checked{% endif %} required>
+                    5 Year Categories (Senior, V40, V45, V50, V55, V60, V65, V70, V75, V80)
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="age_category_size" value="10" {% if season and season.get('age_category_size', 5) == 10 %}checked{% endif %} required>
+                    10 Year Categories (Senior, V40, V50, V60, V70, V80)
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="individual_results_best_of">Individual Results Best Of:</label>
+            <input type="number" id="individual_results_best_of" name="individual_results_best_of" value="{{ season.get('individual_results_best_of', '') if season else '' }}" placeholder="e.g., 3" min="1">
+        </div>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_default" value="true" {% if season and season.get('is_default') %}checked{% endif %}>
+                Set as default season
+            </label>
+        </div>
+        <button type="submit">Update Season</button>
+        <a href="{{ url_for('seasons') }}">Cancel</a>
+    </form>
+</body>
+</html>
