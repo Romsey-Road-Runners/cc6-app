@@ -1,6 +1,11 @@
+import os
+import sys
+
 from flask import Blueprint, request
 from flask_cors import CORS
 from flask_restx import Api, Resource, fields
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
 
 import database
 from auth import login_required

@@ -14,7 +14,8 @@ services:
       - GOOGLE_CLOUD_PROJECT=test-project
       - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
     volumes:
-      - .:/app
+      - .:/workspace
+    working_dir: /workspace/app
     depends_on:
       firestore-emulator:
         condition: service_started

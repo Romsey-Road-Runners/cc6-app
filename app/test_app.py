@@ -6,7 +6,13 @@ from unittest.mock import Mock, patch
 os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
 os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
 
+import os
+import sys
+
 import app
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
+
 import database
 
 
