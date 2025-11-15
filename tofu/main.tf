@@ -181,7 +181,7 @@ resource "google_project_iam_member" "firestore_access" {
   member  = "serviceAccount:${google_service_account.cloudrun_sa.email}"
 }
 
-# Deploy Cloud Run service
+# Deploy Cloud Run service for monolithic app
 resource "google_cloud_run_service" "app" {
   name     = "cc6-app"
   location = var.region
@@ -270,7 +270,7 @@ resource "google_cloud_run_service_iam_member" "public_access" {
 # Custom domain mapping
 resource "google_cloud_run_domain_mapping" "custom_domain" {
   location = var.region
-  name     = var.domain
+  name     = "app.cc6.co.uk"
 
   metadata {
     namespace = var.project_id
@@ -278,6 +278,202 @@ resource "google_cloud_run_domain_mapping" "custom_domain" {
 
   spec {
     route_name = google_cloud_run_service.app.name
+  }
+}
+
+# Public API
+resource "google_cloud_run_service" "api" {
+  name     = "api"
+  location = var.region
+
+  template {
+    metadata {
+      annotations = {
+        "run.googleapis.com/execution-environment" = "gen2"
+        "run.googleapis.com/startup-cpu-boost"     = "true"
+      }
+    }
+
+    spec {
+      service_account_name = google_service_account.cloudrun_sa.email
+
+      containers {
+        image = "gcr.io/${var.project_id}/api:latest"
+
+        env {
+          name  = "GOOGLE_CLOUD_PROJECT"
+          value = var.project_id
+        }
+
+        env {
+          name = "FLASK_SECRET_KEY"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.flask_secret_key.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GOOGLE_CLIENT_ID"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_id.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GOOGLE_CLIENT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_secret.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        resources {
+          limits = {
+            cpu    = "1000m"
+            memory = "512Mi"
+          }
+        }
+      }
+    }
+  }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].spec[0].containers[0].image,
+      template[0].metadata[0].annotations["run.googleapis.com/client-name"],
+      template[0].metadata[0].annotations["run.googleapis.com/client-version"]
+    ]
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "api_public_access" {
+  service  = google_cloud_run_service.api.name
+  location = google_cloud_run_service.api.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_cloud_run_domain_mapping" "api_custom_domain" {
+  location = var.region
+  name     = "api.running.cafe"
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_service.api.name
+  }
+}
+
+# Public API
+resource "google_cloud_run_service" "admin" {
+  name     = "admin"
+  location = var.region
+
+  template {
+    metadata {
+      annotations = {
+        "run.googleapis.com/execution-environment" = "gen2"
+        "run.googleapis.com/startup-cpu-boost"     = "true"
+      }
+    }
+
+    spec {
+      service_account_name = google_service_account.cloudrun_sa.email
+
+      containers {
+        image = "gcr.io/${var.project_id}/admin:latest"
+
+        env {
+          name  = "GOOGLE_CLOUD_PROJECT"
+          value = var.project_id
+        }
+
+        env {
+          name = "FLASK_SECRET_KEY"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.flask_secret_key.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GOOGLE_CLIENT_ID"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_id.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GOOGLE_CLIENT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.oauth_client_secret.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        resources {
+          limits = {
+            cpu    = "1000m"
+            memory = "512Mi"
+          }
+        }
+      }
+    }
+  }
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].spec[0].containers[0].image,
+      template[0].metadata[0].annotations["run.googleapis.com/client-name"],
+      template[0].metadata[0].annotations["run.googleapis.com/client-version"]
+    ]
+  }
+}
+
+resource "google_cloud_run_service_iam_member" "admin_public_access" {
+  service  = google_cloud_run_service.admin.name
+  location = google_cloud_run_service.admin.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_cloud_run_domain_mapping" "admin_custom_domain" {
+  location = var.region
+  name     = "admin.running.cafe"
+
+  metadata {
+    namespace = var.project_id
+  }
+
+  spec {
+    route_name = google_cloud_run_service.admin.name
   }
 }
 

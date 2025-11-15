@@ -108,13 +108,11 @@ jobs:
           file: ${{ matrix.app }}/Dockerfile
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
-        if: ${{ matrix.app == 'app' }}
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v3
-        if: ${{ matrix.app == 'app' }}
         with:
-          service: cc6-app
+          service: ${{ matrix.app == 'app' && 'cc6-app' || matrix.app }}
           region: us-east1
           image: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ matrix.app }}:${{ steps.meta.outputs.version }}

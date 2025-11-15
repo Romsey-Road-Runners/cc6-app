@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+gunicorn = "*"
 google-cloud-firestore = "*"
 flask = "*"
 flask-cors = "*"
