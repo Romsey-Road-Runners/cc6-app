@@ -5,6 +5,8 @@ permissions:
 name: CI
 on:
   push:
+concurrency:
+  group: ${{ github.ref }}
 jobs:
   backend-test:
     name: Backend Lint and Test
@@ -69,8 +71,6 @@ jobs:
   deploy:
     name: Deploy to Google Cloud Run
     runs-on: ubuntu-latest
-    concurrency:
-      group: deploy-group
     needs: backend-test
     strategy:
       matrix:

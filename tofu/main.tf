@@ -198,7 +198,7 @@ resource "google_cloud_run_service" "app" {
       service_account_name = google_service_account.cloudrun_sa.email
 
       containers {
-        image = "gcr.io/${var.project_id}/cc6-app:latest"
+        image = "gcr.io/${var.project_id}/app:latest"
 
         env {
           name  = "GOOGLE_CLOUD_PROJECT"
