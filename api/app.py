@@ -24,7 +24,7 @@ api = Api(
     title="CC6 and RR10 Race Series API",
     version="1.0",
     description="Public API for race and championship results",
-    spec_path="/openapi.json",
+    specs_url="/openapi.json",
     default="Race Series API",
     default_label="Race Series Endpoints",
 )
