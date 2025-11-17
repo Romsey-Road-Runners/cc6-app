@@ -1,0 +1,4 @@
+project_id   = "running-cafe-staging"
+region       = "us-east1"
+domain_api   = "api-staging.running.cafe"
+domain_admin = "admin-staging.running.cafe"

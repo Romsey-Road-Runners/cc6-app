@@ -1,7 +1,7 @@
 resource "google_artifact_registry_repository" "api_repo" {
   location      = "us"
   repository_id = "gcr.io"
-  description   = "Docker repository for CC6 App"
+  description   = "Docker repository for project"
   format        = "DOCKER"
 
   cleanup_policies {

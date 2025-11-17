@@ -72,10 +72,11 @@ jobs:
     name: Deploy to Google Cloud Run
     runs-on: ubuntu-latest
     needs: backend-test
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     strategy:
       matrix:
-        app: [app, api, admin]
-    if: github.ref == 'refs/heads/main'
+        app: [api, admin]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v5
       - name: Extract metadata

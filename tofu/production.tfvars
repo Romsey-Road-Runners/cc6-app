@@ -1,0 +1,5 @@
+project_id            = "cc6-api"
+region                = "us-east1"
+domain_monolithic_app = "app.cc6.co.uk"
+domain_api            = "api.running.cafe"
+domain_admin          = "admin.running.cafe"

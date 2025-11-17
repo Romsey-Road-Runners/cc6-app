@@ -3,10 +3,6 @@ provider "google" {
   region  = var.region
 }
 
-provider "random" {}
-
-provider "docker" {}
-
 # Generate random secret key
 resource "random_password" "flask_secret_key" {
   length  = 32
@@ -89,7 +85,6 @@ resource "google_project_service" "cloudbuild" {
 resource "google_project_service" "artifactregistry" {
   service = "artifactregistry.googleapis.com"
 }
-
 
 
 # Placeholder secrets (to be populated manually)
@@ -182,7 +177,12 @@ resource "google_project_iam_member" "firestore_access" {
 }
 
 # Deploy Cloud Run service for monolithic app
+locals {
+  monolithic_app_count = var.domain_monolithic_app != "" ? 1 : 0
+}
+
 resource "google_cloud_run_service" "app" {
+  count    = local.monolithic_app_count
   name     = "cc6-app"
   location = var.region
 
@@ -261,23 +261,25 @@ resource "google_cloud_run_service" "app" {
 
 # Allow unauthenticated access
 resource "google_cloud_run_service_iam_member" "public_access" {
-  service  = google_cloud_run_service.app.name
-  location = google_cloud_run_service.app.location
+  count    = local.monolithic_app_count
+  service  = google_cloud_run_service.app.0.name
+  location = google_cloud_run_service.app.0.location
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
 # Custom domain mapping
 resource "google_cloud_run_domain_mapping" "custom_domain" {
+  count    = local.monolithic_app_count
   location = var.region
-  name     = "app.cc6.co.uk"
+  name     = var.domain_monolithic_app
 
   metadata {
     namespace = var.project_id
   }
 
   spec {
-    route_name = google_cloud_run_service.app.name
+    route_name = google_cloud_run_service.app.0.name
   }
 }
 
@@ -368,7 +370,7 @@ resource "google_cloud_run_service_iam_member" "api_public_access" {
 
 resource "google_cloud_run_domain_mapping" "api_custom_domain" {
   location = var.region
-  name     = "api.running.cafe"
+  name     = var.domain_api
 
   metadata {
     namespace = var.project_id
@@ -466,7 +468,7 @@ resource "google_cloud_run_service_iam_member" "admin_public_access" {
 
 resource "google_cloud_run_domain_mapping" "admin_custom_domain" {
   location = var.region
-  name     = "admin.running.cafe"
+  name     = var.domain_admin
 
   metadata {
     namespace = var.project_id
@@ -482,4 +484,3 @@ output "github_actions_service_account_key" {
   value     = base64decode(google_service_account_key.github_actions_key.private_key)
   sensitive = true
 }
-
