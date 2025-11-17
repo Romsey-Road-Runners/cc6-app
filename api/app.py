@@ -21,12 +21,12 @@ database.init_running_clubs()
 api = Api(
     app,
     doc="/",
-    title="CC6 Race Series API",
+    title="CC6 and RR10 Race Series API",
     version="1.0",
     description="Public API for race and championship results",
     spec_path="/openapi.json",
-    default="CC6 API",
-    default_label="CC6 Race Series Endpoints",
+    default="Race Series API",
+    default_label="Race Series Endpoints",
 )
 
 # Enable CORS
@@ -36,7 +36,6 @@ CORS(
         "https://*.cc6.co.uk",
         "https://*.rr10.org.uk",
         "https://*.running.cafe",
-        "https://admin-347146726691.us-east1.run.app",
         "http://localhost:*",
         "https://localhost:*",
     ],
