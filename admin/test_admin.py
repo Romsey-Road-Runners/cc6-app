@@ -170,9 +170,11 @@ class TestAdmin(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
 
     @patch("database.is_admin_email")
+    @patch("database.get_season")
     @patch("database.create_race")
-    def test_add_race_with_auth(self, mock_create, mock_is_admin):
+    def test_add_race_with_auth(self, mock_create, mock_get_season, mock_is_admin):
         mock_is_admin.return_value = True
+        mock_get_season.return_value = {"age_category_size": 5}
 
         with self.client.session_transaction() as sess:
             sess["user"] = {"email": "test@example.com"}
@@ -182,7 +184,9 @@ class TestAdmin(unittest.TestCase):
             data={"name": "Test Race", "date": "2024-01-01", "season": "2024 Season"},
         )
         self.assertEqual(response.status_code, 302)
-        mock_create.assert_called_once_with("2024 Season", "Test Race", "2024-01-01")
+        mock_create.assert_called_once_with(
+            "2024 Season", "Test Race", {"date": "2024-01-01", "organising_clubs": []}
+        )
 
     def test_race_results_requires_auth(self):
         response = self.client.get("/race_results/season/race")
@@ -248,7 +252,6 @@ class TestAdmin(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         mock_update_club.assert_called_once()
-
 
     @patch("database.is_admin_email")
     @patch("database.get_participant")

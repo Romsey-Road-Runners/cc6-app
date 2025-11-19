@@ -220,30 +220,50 @@ def add_race():
 @app.route("/add_race", methods=["POST"])
 @login_required
 def add_race_post():
-    """Add new race"""
+    """Add a new race"""
     name = request.form.get("name", "").strip()
-    date = request.form.get("date", "").strip()
-    season = request.form.get("season", "").strip()
+    date = request.form.get("date", "")
+    season = request.form.get("season", "")
+    organising_clubs = request.form.getlist("organising_clubs")
 
-    if name and date and season:
-        try:
-            database.create_race(season, name, date)
-            flash(f"Race {name} created successfully")
-        except Exception as e:
-            flash(f"Error creating race: {str(e)}")
+    if not name:
+        flash("Race name is required")
+        return redirect(url_for("races"))
+
+    if not date:
+        flash("Race date is required")
+        return redirect(url_for("races"))
+
+    if not season:
+        flash("Season is required")
+        return redirect(url_for("races"))
+
+    # Validate season exists
+    if not database.get_season(season):
+        flash("Selected season does not exist")
+        return redirect(url_for("races"))
+
+    try:
+        race_data = {"date": date, "organising_clubs": organising_clubs}
+        database.create_race(season, name, race_data)
+        flash("Race added successfully!")
+    except Exception:
+        flash("Failed to add race.")
+
     return redirect(url_for("races"))
 
 
-@app.route("/race_results/<season>/<race>")
+@app.route("/race_results/<season_name>/<race_name>")
 @login_required
-def race_results(season, race):
+def race_results(season_name, race_name):
     """View race results"""
-    results = database.get_race_results(season, race)
+    results = database.get_race_results(season_name, race_name)
+
     return render_template(
         "race_results.html",
         results=results,
-        season=season,
-        race=race,
+        race_name=race_name,
+        season=season_name,
         user=session.get("user"),
     )
 
@@ -522,75 +542,198 @@ def upload_participants():
 @app.route("/process_upload_results", methods=["POST"])
 @login_required
 def process_upload_results():
-    """Upload race results from CSV"""
-    season_name = request.form.get("season_name", "").strip()
-    race_name = request.form.get("race_name", "").strip()
+    """Process uploaded CSV results"""
+    season_name = request.form.get("season_name", "")
+    race_name = request.form.get("race_name", "")
 
     if not season_name or not race_name:
         flash("Season and race name are required")
-        return redirect(url_for("races"))
+        return redirect(request.referrer or url_for("races"))
 
     if "file" not in request.files:
         flash("No file selected")
-        return redirect(url_for("races"))
+        return redirect(request.referrer or url_for("races"))
 
     file = request.files["file"]
     if file.filename == "":
         flash("No file selected")
-        return redirect(url_for("races"))
+        return redirect(request.referrer or url_for("races"))
 
     try:
         import csv
         import io
 
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-        csv_input = csv.reader(stream)
-        next(csv_input)
+        # Get season data once for age calculation
+        season_data = database.get_season(season_name)
+        season_start_date = season_data.get("start_date") if season_data else None
 
-        results = []
-        for row in csv_input:
-            if len(row) >= 2:
-                participant = database.get_participant(row[0])
-                if participant:
-                    results.append(
-                        {
-                            "participant_id": row[0],
-                            "finish_token": row[1],
-                            "participant": participant,
-                        }
+        if not season_start_date:
+            flash("Season start date is required for results upload")
+            return redirect(request.referrer or url_for("races"))
+
+        content = file.read().decode("utf-8-sig")  # Handle BOM
+        csv_reader = csv.reader(io.StringIO(content))
+
+        results_data = []
+        seen_tokens = set()
+        duplicates = []
+        invalid_barcodes = 0
+        invalid_tokens = 0
+        row_count = 0
+
+        for row in csv_reader:
+            row_count += 1
+            if len(row) < 2:
+                continue
+
+            barcode = row[0].strip().lstrip("\ufeff")  # Remove BOM if present
+            finish_token = row[1].strip()
+
+            if not finish_token:
+                continue
+
+            # Validate barcode and position token formats
+            if not database.validate_barcode(barcode):
+                invalid_barcodes += 1
+                continue
+
+            if not database.validate_position_token(finish_token):
+                invalid_tokens += 1
+                continue
+
+            if finish_token in seen_tokens:
+                duplicates.append(finish_token)
+                continue
+
+            seen_tokens.add(finish_token)
+
+            # Get participant data
+            participant = database.get_participant(barcode)
+            if participant:
+                # Calculate age category using season start date
+                try:
+                    age_category = database.calculate_age_category(
+                        season_start_date,
+                        participant["date_of_birth"],
+                        season_data.get("age_category_size", 5),
                     )
+                except Exception:
+                    age_category = "Unknown"
 
-        database.add_race_results_batch(season_name, race_name, results)
-        flash(f"Processed {len(results)} results")
+                participant_data = {
+                    "first_name": participant["first_name"],
+                    "last_name": participant["last_name"],
+                    "gender": participant["gender"],
+                    "age_category": age_category,
+                    "club": participant["club"],
+                    "parkrun_barcode_id": barcode,
+                }
+            else:
+                # Unknown participant
+                participant_data = {
+                    "parkrun_barcode_id": barcode,
+                }
+
+            results_data.append(
+                {"finish_token": finish_token, "participant": participant_data}
+            )
+
+        if results_data:
+            database.add_race_results_batch(season_name, race_name, results_data)
+
+        message = f"Uploaded {len(results_data)} results successfully!"
+        if duplicates:
+            message += f" Warning: {len(duplicates)} duplicate finish tokens were skipped: {', '.join(duplicates)}."
+        if invalid_barcodes > 0:
+            message += f" Skipped {invalid_barcodes} rows with invalid barcodes."
+        if invalid_tokens > 0:
+            message += f" Skipped {invalid_tokens} rows with invalid position tokens."
+
+        flash(message)
+
     except Exception as e:
-        flash(f"Error processing results: {str(e)}")
+        flash(f"Failed to process CSV file: {str(e)}")
 
-    return redirect(url_for("races"))
+    return redirect(request.referrer or url_for("races"))
 
 
 @app.route("/add_manual_result", methods=["POST"])
 @login_required
 def add_manual_result():
-    """Add manual race result"""
+    """Add a manual race result"""
     season_name = request.form.get("season_name", "").strip()
     race_name = request.form.get("race_name", "").strip()
     barcode = request.form.get("barcode", "").strip()
-    position_token = request.form.get("position_token", "").strip()
+    position_token = request.form.get(
+        "position_token", ""
+    ).strip()  # Template uses position_token
 
-    if all([season_name, race_name, barcode, position_token]):
+    if not all([season_name, race_name, barcode, position_token]):
+        missing_fields = []
+        if not season_name:
+            missing_fields.append("season_name")
+        if not race_name:
+            missing_fields.append("race_name")
+        if not barcode:
+            missing_fields.append("barcode")
+        if not position_token:
+            missing_fields.append("position_token")
+        flash(f"Missing required fields: {', '.join(missing_fields)}")
+        return redirect(request.referrer or url_for("races"))
+
+    # Validate barcode format
+    if not database.validate_barcode(barcode):
+        flash("Invalid barcode format")
+        return redirect(request.referrer or url_for("races"))
+
+    # Validate position token format
+    if not database.validate_position_token(position_token):
+        flash("Position token must be P followed by 1-4 digits (e.g., P1, P123)")
+        return redirect(request.referrer or url_for("races"))
+
+    try:
+        # Get participant data
+        participant = database.get_participant(barcode)
+        if not participant:
+            flash("Participant not found")
+            return redirect(request.referrer or url_for("races"))
+
+        # Get season data for age calculation
+        season_data = database.get_season(season_name)
+        season_start_date = season_data.get("start_date") if season_data else None
+
+        if not season_start_date:
+            flash("Season start date is required for results upload")
+            return redirect(request.referrer or url_for("races"))
+
+        # Calculate age category using season start date
         try:
-            participant = database.get_participant(barcode)
-            if participant:
-                database.add_race_result(
-                    season_name, race_name, barcode, position_token, participant
-                )
-                flash("Result added successfully")
-            else:
-                flash("Participant not found")
-        except Exception as e:
-            flash(f"Error adding result: {str(e)}")
+            age_category = database.calculate_age_category(
+                season_start_date,
+                participant["date_of_birth"],
+                season_data.get("age_category_size", 5),
+            )
+        except Exception:
+            age_category = "Unknown"
 
-    return redirect(url_for("races"))
+        participant_data = {
+            "first_name": participant["first_name"],
+            "last_name": participant["last_name"],
+            "gender": participant["gender"],
+            "age_category": age_category,
+            "club": participant["club"],
+            "parkrun_barcode_id": barcode,
+        }
+
+        database.add_race_result(
+            season_name, race_name, position_token, participant_data
+        )
+        flash("Manual result added successfully!")
+    except Exception as e:
+        print(f"Error adding manual result: {e}")
+        flash(f"Failed to add manual result: {str(e)}")
+
+    return redirect(request.referrer or url_for("races"))
 
 
 @app.route("/edit_season/<season_name>")
@@ -659,7 +802,9 @@ def delete_all_race_results(season_name, race_name):
         flash("All race results deleted successfully")
     except Exception as e:
         flash(f"Error deleting results: {str(e)}")
-    return redirect(url_for("race_results", season=season_name, race=race_name))
+    return redirect(
+        url_for("race_results", season_name=season_name, race_name=race_name)
+    )
 
 
 @app.route(
@@ -673,7 +818,9 @@ def delete_race_result(season_name, race_name, finish_token):
         flash("Race result deleted successfully")
     except Exception as e:
         flash(f"Error deleting result: {str(e)}")
-    return redirect(url_for("race_results", season=season_name, race=race_name))
+    return redirect(
+        url_for("race_results", season_name=season_name, race_name=race_name)
+    )
 
 
 @app.route("/export_participants")
