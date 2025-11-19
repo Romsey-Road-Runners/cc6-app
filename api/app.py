@@ -159,14 +159,14 @@ class SeasonList(Resource):
         }
 
 
-@api.route("/seasons/<season_name>")
+@api.route("/seasons/<string:season_name>")
 class Season(Resource):
     @api.doc(
         "get_season",
         description="Get season details. Use /seasons endpoint to get list of available season names.",
-    )
-    @api.param(
-        "season_name", "Season name (get available seasons from /seasons endpoint)"
+        params={
+            "season_name": "Season name (get available seasons from /seasons endpoint)"
+        },
     )
     @api.marshal_with(season_model)
     def get(self, season_name):
@@ -183,11 +183,15 @@ class Season(Resource):
         }
 
 
-@api.route("/seasons/<season_name>/races/<race_name>")
+@api.route("/seasons/<string:season_name>/races/<string:race_name>")
 class RaceResults(Resource):
-    @api.doc("get_race_results")
-    @api.param("season_name", "Season name")
-    @api.param("race_name", "Race name")
+    @api.doc(
+        "get_race_results",
+        params={
+            "season_name": "Season name",
+            "race_name": "Race name",
+        },
+    )
     @api.param("gender", "Filter by gender (Male/Female)", _in="query")
     @api.param("category", "Filter by age category", _in="query")
     @api.param("showMissingData", "Show results with missing data", _in="query")
@@ -223,10 +227,12 @@ class RaceResults(Resource):
         return {"name": race_name, "season": season_name, "results": filtered_results}
 
 
-@api.route("/seasons/<season_name>/championship/team")
+@api.route("/seasons/<string:season_name>/championship/team")
 class TeamChampionship(Resource):
-    @api.doc("get_team_championship")
-    @api.param("season_name", "Season name")
+    @api.doc(
+        "get_team_championship",
+        params={"season_name": "Season name"},
+    )
     @api.param("gender", "Gender (Male/Female) - required", _in="query", required=True)
     @api.marshal_with(championship_model)
     def get(self, season_name):
@@ -325,10 +331,12 @@ class TeamChampionship(Resource):
         }
 
 
-@api.route("/seasons/<season_name>/championship/individual")
+@api.route("/seasons/<string:season_name>/championship/individual")
 class IndividualChampionship(Resource):
-    @api.doc("get_individual_championship")
-    @api.param("season_name", "Season name")
+    @api.doc(
+        "get_individual_championship",
+        params={"season_name": "Season name"},
+    )
     @api.param("gender", "Gender (Male/Female) - required", _in="query", required=True)
     @api.marshal_with(championship_model)
     def get(self, season_name):

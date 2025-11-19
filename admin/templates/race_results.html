@@ -266,7 +266,7 @@
             
             if (filtered.length > 0) {
                 searchResults.innerHTML = filtered.map(p => 
-                    `<div style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;" onclick="selectParticipant('${p.barcode}', '${p.first_name} ${p.last_name} (${p.barcode})')">
+                    `<div style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee; background: white; color: black;" onclick="selectParticipant('${p.barcode}', '${p.first_name} ${p.last_name} (${p.barcode})')">
                         ${p.first_name} ${p.last_name} (${p.barcode})
                     </div>`
                 ).join('');
