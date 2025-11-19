@@ -123,10 +123,16 @@ def admins():
 @login_required
 def api_participants():
     """Get participants as JSON"""
-    result = database.get_participants()
-    if isinstance(result, dict) and "participants" in result:
-        return result["participants"]
-    return result
+    # Check if all participants are requested (for search functionality)
+    get_all = request.args.get("all", "false").lower() == "true"
+
+    if get_all:
+        return database.get_participants(get_all=True)
+    else:
+        result = database.get_participants()
+        if isinstance(result, dict) and "participants" in result:
+            return result["participants"]
+        return result
 
 
 @app.route("/add_admin", methods=["POST"])

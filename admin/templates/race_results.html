@@ -240,7 +240,7 @@
         let participants = [];
         
         // Load participants
-        fetch('/api/participants')
+        fetch('/api/participants?all=true')
             .then(response => response.json())
             .then(data => {
                 participants = data;
@@ -259,9 +259,9 @@
             }
             
             const filtered = participants.filter(p => 
-                p.first_name.toLowerCase().includes(query) ||
-                p.last_name.toLowerCase().includes(query) ||
-                p.barcode.toLowerCase().includes(query)
+                (p.first_name || '').toLowerCase().includes(query) ||
+                (p.last_name || '').toLowerCase().includes(query) ||
+                (p.barcode || '').toLowerCase().includes(query)
             ).slice(0, 10);
             
             if (filtered.length > 0) {

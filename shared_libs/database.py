@@ -163,9 +163,19 @@ def update_participant(barcode, data):
     return db.collection("participants").document(barcode).update(data)
 
 
-def get_participants(page=1, page_size=50, search=None):
+def get_participants(page=1, page_size=50, search=None, get_all=False):
     """Get participants with pagination and optional search"""
     query = db.collection("participants").order_by("last_name").order_by("first_name")
+
+    if get_all:
+        # Return all participants without pagination
+        all_participants = query.get()
+        result = []
+        for p in all_participants:
+            participant_data = p.to_dict()
+            participant_data["barcode"] = p.id
+            result.append(participant_data)
+        return result
 
     if search:
         # For search, fetch all participants and filter in Python
