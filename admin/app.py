@@ -216,9 +216,15 @@ def race_results(season, race):
 def add_club():
     """Add new club"""
     club_name = request.form.get("club_name", "").strip()
+    short_names = request.form.get("short_names", "").strip()
     if club_name:
         try:
-            database.add_club(club_name, [])
+            short_names_list = (
+                [name.strip() for name in short_names.split(",") if name.strip()]
+                if short_names
+                else []
+            )
+            database.add_club(club_name, short_names_list)
             flash(f"Club {club_name} added successfully")
         except Exception as e:
             flash(f"Error adding club: {str(e)}")
@@ -246,25 +252,16 @@ def edit_club_post(club_name=None, club_id=None):
     """Update club"""
     # Handle both parameter names
     club_name = club_name or club_id
-    new_name = request.form.get("club_name", "").strip()
-    if new_name:
+    short_names = request.form.get("short_names", "").strip()
+    if short_names:
         try:
-            database.update_club(club_name, new_name, [])
+            short_names_list = [
+                name.strip() for name in short_names.split(",") if name.strip()
+            ]
+            database.update_club(club_name, {"short_names": short_names_list})
             flash("Club updated successfully")
         except Exception as e:
             flash(f"Error updating club: {str(e)}")
-    return redirect(url_for("clubs"))
-
-
-@app.route("/delete_club/<club_name>", methods=["POST"])
-@login_required
-def delete_club(club_name):
-    """Delete club"""
-    try:
-        database.delete_club(club_name)
-        flash(f"Club {club_name} deleted successfully")
-    except Exception as e:
-        flash(f"Error deleting club: {str(e)}")
     return redirect(url_for("clubs"))
 
 

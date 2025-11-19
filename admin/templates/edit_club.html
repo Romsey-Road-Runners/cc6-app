@@ -23,15 +23,14 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    <p>Warning: Changing the club name is probably a very bad idea and will likely affect data integrity.</p>
     <form method="POST" action="{{ url_for('edit_club_post', club_name=club.name) }}">
         <div class="form-group">
             <label for="club_name">Club Name:</label>
-            <input type="text" id="club_name" name="club_name" value="{{ club.name }}" required>
+            <input type="text" id="club_name" name="club_name" value="{{ club.name }}" readonly>
         </div>
         <div class="form-group">
             <label for="short_names">Short Names (comma-separated):</label>
-            <input type="text" id="short_names" name="short_names" value="{{ club.short_names | join(', ') if club.short_names else '' }}">
+            <input type="text" id="short_names" name="short_names" value="{{ club.short_names | join(', ') if club.short_names else '' }}" required>
         </div>
         <button type="submit">Update Club</button>
         <a href="{{ url_for('clubs') }}">Cancel</a>
