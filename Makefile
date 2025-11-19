@@ -20,17 +20,17 @@ test-admin:
 
 test-local:
 	cd $(ROOT_DIR)/app && python -m pytest test_app.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
-	cd $(ROOT_DIR)/api && python -m pytest test_api.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing
-	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing
+	cd $(ROOT_DIR)/api && python -m pytest test_api.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
+	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
 
 test-local-app:
 	cd $(ROOT_DIR)/app && python -m pytest test_app.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
 
 test-local-api:
-	cd $(ROOT_DIR)/api && python -m pytest test_api.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing
+	cd $(ROOT_DIR)/api && python -m pytest test_api.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
 
 test-local-admin:
-	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing
+	cd $(ROOT_DIR)/admin && python -m pytest test_admin.py ../shared_libs/test_database.py --cov=. --cov-report=term-missing --cov-report=xml --junit-xml=test-results.xml
 
 test-coverage:
 	cd $(ROOT_DIR)/app && pytest test_app.py test_database.py --cov=. --cov-report=term-missing --cov-report=html

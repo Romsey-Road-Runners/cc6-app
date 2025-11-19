@@ -4,10 +4,10 @@ import sys
 # Add parent directory to path for shared modules
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
-from flask_compress import Compress
 import database
 from auth import init_oauth, login_required
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_compress import Compress
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")

@@ -4,11 +4,11 @@ import sys
 # Add parent directory to path for shared modules
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
 
+import database
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
 from flask_restx import Api, Resource, fields
-import database
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-this")
