@@ -104,7 +104,9 @@ def races():
         for race in races:
             race["season"] = season
             all_races.append(race)
-    return render_template("races.html", races=all_races, user=session.get("user"))
+    return render_template(
+        "races.html", races=all_races, seasons=seasons, user=session.get("user")
+    )
 
 
 @app.route("/admins")
@@ -529,9 +531,16 @@ def upload_participants():
             message += f" Skipped {invalid_rows} invalid rows."
         flash(message)
 
-        # Flash invalid row details
-        for detail in invalid_row_details:
-            flash(detail)
+        # Flash invalid row details (limit to prevent large session cookies)
+        if invalid_row_details:
+            if len(invalid_row_details) <= 10:
+                for detail in invalid_row_details:
+                    flash(detail)
+            else:
+                flash(f"First 10 invalid rows: {'; '.join(invalid_row_details[:10])}")
+                flash(
+                    f"... and {len(invalid_row_details) - 10} more invalid rows not shown"
+                )
 
     except Exception:
         flash("Failed to process CSV file. Please check the format.")
