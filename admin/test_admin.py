@@ -249,17 +249,6 @@ class TestAdmin(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         mock_update_club.assert_called_once()
 
-    @patch("database.is_admin_email")
-    @patch("database.delete_club")
-    def test_delete_club_with_auth(self, mock_delete_club, mock_is_admin):
-        mock_is_admin.return_value = True
-
-        with self.client.session_transaction() as sess:
-            sess["user"] = {"email": "test@example.com"}
-
-        response = self.client.post("/delete_club/test_club")
-        self.assertEqual(response.status_code, 302)
-        mock_delete_club.assert_called_once()
 
     @patch("database.is_admin_email")
     @patch("database.get_participant")

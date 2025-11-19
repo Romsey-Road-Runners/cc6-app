@@ -158,14 +158,51 @@ def remove_admin():
 @app.route("/add_season", methods=["POST"])
 @login_required
 def add_season():
-    """Add new season"""
+    """Add a new season"""
     season_name = request.form.get("season_name", "").strip()
-    if season_name:
-        try:
-            database.create_season(season_name)
-            flash(f"Season {season_name} created successfully")
-        except Exception as e:
-            flash(f"Error creating season: {str(e)}")
+    start_date = request.form.get("start_date", "").strip()
+    is_default = request.form.get("is_default") == "true"
+    individual_results_best_of = request.form.get(
+        "individual_results_best_of", ""
+    ).strip()
+
+    try:
+        age_category_size = int(request.form.get("age_category_size", 5))
+    except ValueError:
+        flash("Invalid age category size")
+        return redirect(url_for("seasons"))
+
+    if not season_name:
+        flash("Season name is required")
+        return redirect(url_for("seasons"))
+
+    # Validate season name for Firestore compatibility
+    if "/" in season_name:
+        flash("Season name cannot contain forward slashes (/)")
+        return redirect(url_for("seasons"))
+
+    # Check if season already exists
+    if database.get_season(season_name):
+        flash("Season already exists")
+        return redirect(url_for("seasons"))
+
+    try:
+        # If setting as default, clear other defaults first
+        if is_default:
+            database.clear_default_seasons()
+
+        database.create_season(
+            season_name,
+            age_category_size,
+            is_default,
+            start_date,
+            individual_results_best_of,
+        )
+        flash("Season added successfully!")
+    except Exception as e:
+        print(f"Error creating season: {e}")
+        flash(f"Failed to add season: {str(e)}")
+
     return redirect(url_for("seasons"))
 
 
@@ -572,22 +609,31 @@ def edit_season(season_name):
 @app.route("/edit_season/<season_name>", methods=["POST"])
 @login_required
 def update_season(season_name):
-    """Update season"""
-    age_category_size = request.form.get("age_category_size", "5").strip()
+    """Update existing season"""
+    age_category_size = int(request.form.get("age_category_size", 5).strip())
+    start_date = request.form.get("start_date", "").strip()
     is_default = request.form.get("is_default") == "true"
+    individual_results_best_of = request.form.get(
+        "individual_results_best_of", ""
+    ).strip()
 
     try:
+        # If setting as default, clear other defaults first
         if is_default:
             database.clear_default_seasons()
 
         update_data = {
-            "age_category_size": int(age_category_size),
+            "age_category_size": age_category_size,
+            "start_date": start_date,
             "is_default": is_default,
         }
+        if individual_results_best_of:
+            update_data["individual_results_best_of"] = individual_results_best_of
+
         database.update_season(season_name, update_data)
-        flash("Season updated successfully")
-    except Exception as e:
-        flash(f"Error updating season: {str(e)}")
+        flash("Season updated successfully!")
+    except Exception:
+        flash("Failed to update season.")
 
     return redirect(url_for("seasons"))
 
