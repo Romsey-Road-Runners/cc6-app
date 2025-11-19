@@ -295,7 +295,9 @@ def edit_participant_post(participant_id):
     barcode = request.form.get("barcode", "").strip()
     club = request.form.get("club", "").strip()
 
-    if all([first_name, last_name, gender, dob, barcode, club]):
+    if barcode and not database.validate_barcode(barcode):
+        flash("Invalid Parkrun ID")
+    elif all([first_name, last_name, gender, dob, barcode, club]):
         try:
             database.update_participant(
                 participant_id,
@@ -342,31 +344,143 @@ def upload_participants():
     try:
         import csv
         import io
+        from datetime import datetime
 
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-        csv_input = csv.reader(stream)
-        next(csv_input)
+        content = file.read().decode("utf-8")
+        csv_reader = csv.reader(io.StringIO(content))
 
+        # Skip header row
+        next(csv_reader, None)
+
+        # Get clubs list once for validation
         clubs = database.get_clubs()
-        participants = []
 
-        for row in csv_input:
-            if len(row) >= 6:
-                participants.append(
-                    {
-                        "barcode": row[0],
-                        "first_name": row[1],
-                        "last_name": row[2],
-                        "gender": row[3],
-                        "date_of_birth": row[4],
-                        "club": row[5],
-                    }
+        new_participants = []
+        updated_participants = []
+        seen_barcodes = set()
+        file_duplicates = 0
+        unchanged_records = 0
+        invalid_rows = 0
+        invalid_row_details = []
+
+        for row in csv_reader:
+            if len(row) < 6:
+                invalid_rows += 1
+                continue
+
+            barcode = row[0].strip().upper()
+            fname = row[1].strip()
+            lname = row[2].strip()
+            gender = row[3].strip()
+            dob = row[4].strip()
+            club = row[5].strip()
+
+            # Skip if invalid barcode
+            if not database.validate_barcode(barcode):
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid Parkrun ID '{barcode}'"
                 )
+                continue
 
-        database.process_participants_batch(participants, clubs)
-        flash(f"Processed {len(participants)} participants")
-    except Exception as e:
-        flash(f"Error processing file: {str(e)}")
+            # Skip duplicates in file
+            if barcode in seen_barcodes:
+                file_duplicates += 1
+                continue
+
+            # Convert date format from DD/MM/YYYY to YYYY-MM-DD
+            try:
+                if dob:
+                    date_obj = datetime.strptime(dob, "%d/%m/%Y")
+                    dob = date_obj.strftime("%Y-%m-%d")
+            except ValueError:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid date '{row[4]}'"
+                )
+                continue
+
+            # Skip if required fields missing or invalid gender
+            if not all([fname, lname, gender, dob, club]):
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Missing required fields"
+                )
+                continue
+
+            if gender not in ["Male", "Female"]:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid gender '{gender}'"
+                )
+                continue
+
+            # Validate and normalize club name
+            normalized_club = database.validate_and_normalize_club(club, clubs)
+            if not normalized_club:
+                invalid_rows += 1
+                invalid_row_details.append(
+                    f"Row {csv_reader.line_num}: Invalid club '{club}'"
+                )
+                continue
+
+            # Check if participant exists in database
+            existing_participant = database.get_participant(barcode)
+            if existing_participant:
+                # Compare data to see if update is needed
+                new_data = {
+                    "first_name": fname,
+                    "last_name": lname,
+                    "gender": gender,
+                    "date_of_birth": dob,
+                    "club": normalized_club,
+                }
+
+                # Check if any field has changed
+                has_changes = False
+                for key, value in new_data.items():
+                    if existing_participant.get(key) != value:
+                        has_changes = True
+                        break
+
+                if has_changes:
+                    updated_participants.append((barcode, new_data))
+                else:
+                    unchanged_records += 1
+                continue
+
+            seen_barcodes.add(barcode)
+            new_participants.append(
+                {
+                    "first_name": fname,
+                    "last_name": lname,
+                    "gender": gender,
+                    "date_of_birth": dob,
+                    "barcode": barcode,
+                    "club": normalized_club,
+                }
+            )
+
+        if new_participants or updated_participants:
+            database.process_participants_batch(new_participants, updated_participants)
+
+        message = f"Added {len(new_participants)} new participants."
+        if len(updated_participants) > 0:
+            message += f" Updated {len(updated_participants)} existing participants."
+        if unchanged_records > 0:
+            message += f" {unchanged_records} records unchanged."
+        if file_duplicates > 0:
+            message += f" Skipped {file_duplicates} duplicates in file."
+        if invalid_rows > 0:
+            message += f" Skipped {invalid_rows} invalid rows."
+        flash(message)
+
+        # Flash invalid row details
+        for detail in invalid_row_details:
+            flash(detail)
+
+    except Exception:
+        flash("Failed to process CSV file. Please check the format.")
 
     return redirect(url_for("participants"))
 
