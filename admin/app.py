@@ -450,11 +450,17 @@ def upload_participants():
                 file_duplicates += 1
                 continue
 
-            # Convert date format from DD/MM/YYYY to YYYY-MM-DD
+            # Convert date format to YYYY-MM-DD
             try:
                 if dob:
-                    date_obj = datetime.strptime(dob, "%d/%m/%Y")
-                    dob = date_obj.strftime("%Y-%m-%d")
+                    # Try DD/MM/YYYY format first
+                    try:
+                        date_obj = datetime.strptime(dob, "%d/%m/%Y")
+                        dob = date_obj.strftime("%Y-%m-%d")
+                    except ValueError:
+                        # Try YYYY-MM-DD format
+                        date_obj = datetime.strptime(dob, "%Y-%m-%d")
+                        # Already in correct format
             except ValueError:
                 invalid_rows += 1
                 invalid_row_details.append(
