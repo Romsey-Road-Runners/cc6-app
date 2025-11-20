@@ -144,4 +144,4 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Deploy to Cloud Storage
         run: |
-          gsutil -m rsync -r -d ./frontend/build gs://${{ github.ref == 'refs/heads/main' && 'app.cc6.co.uk' || 'app-staging.cc6.co.uk' }}/
+          gsutil -m rsync -r -d ./frontend/dist gs://${{ github.ref == 'refs/heads/main' && 'app.cc6.co.uk' || 'app-staging.cc6.co.uk' }}/
