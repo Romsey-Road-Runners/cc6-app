@@ -86,6 +86,34 @@ resource "google_project_service" "artifactregistry" {
   service = "artifactregistry.googleapis.com"
 }
 
+# Create bucket for static frontend hosting
+# For custom domain: create CNAME record pointing to c.storage.googleapis.com
+resource "google_storage_bucket" "frontend" {
+  name     = var.domain_frontend
+  location = var.region
+
+  website {
+    main_page_suffix = "index.html"
+    not_found_page   = "404.html"
+  }
+
+  uniform_bucket_level_access = true
+}
+
+# Make bucket publicly readable
+resource "google_storage_bucket_iam_member" "frontend_public" {
+  bucket = google_storage_bucket.frontend.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
+# Grant GitHub Actions access to frontend bucket
+resource "google_storage_bucket_iam_member" "github_actions_frontend_access" {
+  bucket = google_storage_bucket.frontend.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 
 # Placeholder secrets (to be populated manually)
 resource "google_secret_manager_secret" "oauth_client_id" {

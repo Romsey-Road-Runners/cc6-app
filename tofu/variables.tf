@@ -25,3 +25,9 @@ variable "domain_admin" {
   description = "Domain used for admin app"
   type        = string
 }
+
+variable "domain_frontend" {
+  description = "Domain used for frontend app (Firebase Hosting)"
+  type        = string
+}
+
