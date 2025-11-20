@@ -2,9 +2,6 @@
 .season-form {
     max-width: 500px;
     margin-bottom: 30px;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
 }
 .season-form .form-group {
     margin-bottom: 15px;
@@ -97,9 +94,7 @@
     <input type="number" id="individual_results_best_of" name="individual_results_best_of" value="{{ season.get('individual_results_best_of', '') if season else '' }}" placeholder="e.g., 3" min="1" style="width: 80px;">
 </div>
 
-<div class="form-group">
-    <label class="checkbox-label">
-        <input type="checkbox" name="is_default" value="true" {% if season and season.get('is_default') %}checked{% endif %}>
-        Set as default season
-    </label>
+<div class="form-group inline-field">
+    <label for="is_default">Set as default season:</label>
+    <input type="checkbox" id="is_default" name="is_default" value="true" {% if season and season.get('is_default') %}checked{% endif %}>
 </div>
