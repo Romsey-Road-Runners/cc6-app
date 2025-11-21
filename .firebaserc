@@ -1,19 +1,19 @@
 {
   "projects": {
-    "default": "running-cafe-staging-b7491"
+    "default": "running-cafe-staging"
   },
   "targets": {
-    "running-cafe-staging-b7491": {
+    "running-cafe-staging": {
       "hosting": {
         "cc6-frontend": [
           "cc6-frontend"
         ]
       }
     },
-    "running-cafe-production": {
+    "cc6-api": {
       "hosting": {
         "cc6-frontend": [
-          "cc6-frontend-production"
+          "cc6-frontend-prod"
         ]
       }
     }

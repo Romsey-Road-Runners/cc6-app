@@ -1,6 +1,5 @@
 project_id           = "running-cafe-staging"
-firebase_project_id  = "running-cafe-staging-b7491"
-firebase_site_suffix = ""
+firebase_site_suffix = "-staging"
 region               = "us-east1"
 domain_api           = "api-staging.running.cafe"
 domain_admin         = "admin-staging.running.cafe"

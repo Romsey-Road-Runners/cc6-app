@@ -92,37 +92,33 @@ resource "google_project_service" "artifactregistry" {
 }
 
 # Enable Firebase APIs
-resource "google_project_service" "firebase" {
+resource "google_project_service" "firebase_gcp_project" {
   service = "firebase.googleapis.com"
-  project = var.firebase_project_id
 }
 
-resource "google_project_service" "firebasehosting" {
+resource "google_project_service" "firebasehosting_gcp_project" {
   service = "firebasehosting.googleapis.com"
-  project = var.firebase_project_id
 }
+
 
 # Initialize Firebase project
-resource "google_firebase_project" "default" {
+resource "google_firebase_project" "default_gcp_project" {
   provider = google-beta
-  project  = var.firebase_project_id
 
-  depends_on = [google_project_service.firebase]
+  depends_on = [google_project_service.firebase_gcp_project]
 }
+
 
 # Create Firebase Hosting site
 resource "google_firebase_hosting_site" "frontend" {
   provider = google-beta
-  project  = var.firebase_project_id
   site_id  = "cc6-frontend${var.firebase_site_suffix}"
 
-  depends_on = [google_firebase_project.default, google_project_service.firebasehosting]
+  depends_on = [google_firebase_project.default_gcp_project, google_project_service.firebasehosting_gcp_project]
 }
 
-# Custom domain for Firebase Hosting (conditional)
 resource "google_firebase_hosting_custom_domain" "frontend_domain" {
   provider      = google-beta
-  project       = var.firebase_project_id
   site_id       = google_firebase_hosting_site.frontend.site_id
   custom_domain = var.domain_frontend
 
@@ -190,13 +186,13 @@ resource "google_project_iam_member" "github_actions_artifact_registry_writer" {
 
 # Grant Firebase permissions to GitHub Actions SA
 resource "google_project_iam_member" "github_actions_firebase_admin" {
-  project = var.firebase_project_id
+  project = var.project_id
   role    = "roles/firebase.admin"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
 resource "google_project_iam_member" "github_actions_firebase_hosting_admin" {
-  project = var.firebase_project_id
+  project = var.project_id
   role    = "roles/firebasehosting.admin"
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
