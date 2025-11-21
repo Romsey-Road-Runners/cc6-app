@@ -188,6 +188,19 @@ resource "google_project_iam_member" "github_actions_artifact_registry_writer" {
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
 }
 
+# Grant Firebase permissions to GitHub Actions SA
+resource "google_project_iam_member" "github_actions_firebase_admin" {
+  project = var.firebase_project_id
+  role    = "roles/firebase.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+resource "google_project_iam_member" "github_actions_firebase_hosting_admin" {
+  project = var.firebase_project_id
+  role    = "roles/firebasehosting.admin"
+  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
 # Create service account key for GitHub Actions
 resource "google_service_account_key" "github_actions_key" {
   service_account_id = google_service_account.github_actions_sa.name
