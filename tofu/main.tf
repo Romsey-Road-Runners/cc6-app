@@ -3,6 +3,11 @@ provider "google" {
   region  = var.region
 }
 
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+}
+
 # Generate random secret key
 resource "random_password" "flask_secret_key" {
   length  = 32
@@ -86,32 +91,42 @@ resource "google_project_service" "artifactregistry" {
   service = "artifactregistry.googleapis.com"
 }
 
-# Create bucket for static frontend hosting
-# For custom domain: create CNAME record pointing to c.storage.googleapis.com
-resource "google_storage_bucket" "frontend" {
-  name     = var.domain_frontend
-  location = var.region
-
-  website {
-    main_page_suffix = "index.html"
-    not_found_page   = "404.html"
-  }
-
-  uniform_bucket_level_access = true
+# Enable Firebase APIs
+resource "google_project_service" "firebase" {
+  service = "firebase.googleapis.com"
+  project = var.firebase_project_id
 }
 
-# Make bucket publicly readable
-resource "google_storage_bucket_iam_member" "frontend_public" {
-  bucket = google_storage_bucket.frontend.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+resource "google_project_service" "firebasehosting" {
+  service = "firebasehosting.googleapis.com"
+  project = var.firebase_project_id
 }
 
-# Grant GitHub Actions access to frontend bucket
-resource "google_storage_bucket_iam_member" "github_actions_frontend_access" {
-  bucket = google_storage_bucket.frontend.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.github_actions_sa.email}"
+# Initialize Firebase project
+resource "google_firebase_project" "default" {
+  provider = google-beta
+  project  = var.firebase_project_id
+
+  depends_on = [google_project_service.firebase]
+}
+
+# Create Firebase Hosting site
+resource "google_firebase_hosting_site" "frontend" {
+  provider = google-beta
+  project  = var.firebase_project_id
+  site_id  = "cc6-frontend"
+
+  depends_on = [google_firebase_project.default, google_project_service.firebasehosting]
+}
+
+# Custom domain for Firebase Hosting (conditional)
+resource "google_firebase_hosting_custom_domain" "frontend_domain" {
+  provider      = google-beta
+  project       = var.firebase_project_id
+  site_id       = google_firebase_hosting_site.frontend.site_id
+  custom_domain = var.domain_frontend
+
+  depends_on = [google_firebase_hosting_site.frontend]
 }
 
 

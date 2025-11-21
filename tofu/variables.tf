@@ -3,6 +3,12 @@ variable "project_id" {
   type        = string
 }
 
+variable "firebase_project_id" {
+  description = "Firebase project ID (may be different from GCP project ID)"
+  type        = string
+  default     = ""
+}
+
 variable "region" {
   description = "Google Cloud region"
   type        = string

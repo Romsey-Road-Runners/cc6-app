@@ -18,6 +18,22 @@ provider "registry.opentofu.org/hashicorp/google" {
   ]
 }
 
+provider "registry.opentofu.org/hashicorp/google-beta" {
+  version = "7.12.0"
+  hashes = [
+    "h1:XW+mbXD/logkLLGDHGVwwuxYmXwbymBcoyof7EB/7sE=",
+    "zh:14d798fff8638858206441b1c97d8870936a81a47748f904bb62aa31ae9769c4",
+    "zh:14f9cac161732dc95d2fc1167399cb762650635ae6226ef39f0e3531888768b2",
+    "zh:56580746fbb273f59c7a171f463ed4d2216bce8128813c67dee2f4a38aa089c6",
+    "zh:7bcee6fdad84ee3a847c5926388b7eaafc7c40ae38f6ac6086200ba28e77a2ea",
+    "zh:81eebc3fdcf8798e5e69c5ad1a818f0a997e53aafab0a4783325dc8a9dc72219",
+    "zh:90e8308c849d63889f7b71f9d40787be7d819fae47e49e23c63f954c424db012",
+    "zh:ca691eadd5d6a434827aacc2e02ad482d59b34ab1f9670cdbb2d155ec0e6fbf3",
+    "zh:cf9e235d10409775c5666be5ae797ba2d400ea32013f163f4b477b8b71704832",
+    "zh:e92e918dc8e3f8f5507db8fd3ebfcd6c340227a9a3aea39c9c335c2223aaa2c6",
+  ]
+}
+
 provider "registry.opentofu.org/hashicorp/random" {
   version     = "3.7.2"
   constraints = "~> 3.0"
