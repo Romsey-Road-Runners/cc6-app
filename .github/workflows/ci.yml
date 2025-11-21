@@ -161,11 +161,4 @@ jobs:
           base: main
           head: develop
           title: "Auto PR: Deploy develop to production"
-          body: |
-            Automated pull request to deploy staging changes to production.
-            
-            **Changes deployed to staging:**
-            - Backend services deployed successfully
-            - Frontend deployed successfully
-            
-            Please review and merge to deploy to production.
+          body: Automated pull request to deploy staging changes to production.
