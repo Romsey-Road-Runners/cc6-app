@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "running-cafe-staging-b7491"
+  },
+  "targets": {
+    "running-cafe-staging-b7491": {
+      "hosting": {
+        "cc6-frontend": [
+          "cc6-frontend"
+        ]
+      }
+    }
+  }
+}
