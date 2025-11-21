@@ -9,6 +9,13 @@
           "cc6-frontend"
         ]
       }
+    },
+    "running-cafe-production": {
+      "hosting": {
+        "cc6-frontend": [
+          "cc6-frontend-production"
+        ]
+      }
     }
   }
 }

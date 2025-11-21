@@ -114,7 +114,7 @@ resource "google_firebase_project" "default" {
 resource "google_firebase_hosting_site" "frontend" {
   provider = google-beta
   project  = var.firebase_project_id
-  site_id  = "cc6-frontend"
+  site_id  = "cc6-frontend${var.firebase_site_suffix}"
 
   depends_on = [google_firebase_project.default, google_project_service.firebasehosting]
 }

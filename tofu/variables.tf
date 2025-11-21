@@ -6,7 +6,11 @@ variable "project_id" {
 variable "firebase_project_id" {
   description = "Firebase project ID (may be different from GCP project ID)"
   type        = string
-  default     = ""
+}
+
+variable "firebase_site_suffix" {
+  description = "As the firebase site id must be globally unique, configure a suffix"
+  type        = string
 }
 
 variable "region" {
