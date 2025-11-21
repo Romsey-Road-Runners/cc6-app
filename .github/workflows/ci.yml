@@ -153,11 +153,29 @@ jobs:
     needs: [deploy-backend, deploy-frontend]
     if: github.ref == 'refs/heads/develop'
     steps:
-      - uses: actions/checkout@v5
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+      - name: Checkout branch ${{ github.ref_name }}
+        uses: actions/checkout@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
-          title: "Auto PR: Deploy develop to production"
-          body: Automated pull request to deploy staging changes to production.
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Check if PR already exists
+        id: check
+        run: |
+          PR_URL=$(gh pr list --state "open" --base "main" --label "production" --json url | jq -r .[].url)
+          if [ -z "$PR_URL" ];
+          then
+            echo "raise=true" >> $GITHUB_OUTPUT
+          else
+            echo "PR is available [here]($PR_URL)" >> $GITHUB_STEP_SUMMARY;
+          fi
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+
+      - name: Raise PR 
+        if: ${{ steps.check.outputs.raise }}
+        run: |
+          gh pr create --base "main" --label "production" --title "Deploy to Production" --body "Sync changes from develop branch to main"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
