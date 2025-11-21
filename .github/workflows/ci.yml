@@ -159,6 +159,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          head: develop
           title: "Auto PR: Deploy develop to production"
           body: Automated pull request to deploy staging changes to production.
