@@ -1,6 +1,7 @@
 {
-  "hosting": {
-    "cc6-frontend": {
+  "hosting": [
+    {
+      "target": "cc6-frontend",
       "public": "frontend/dist",
       "ignore": [
         "firebase.json",
@@ -14,5 +15,5 @@
         }
       ]
     }
-  }
+  ]
 }
