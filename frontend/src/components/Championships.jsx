@@ -14,7 +14,7 @@ function Championships() {
 
   // Load seasons on mount
   useEffect(() => {
-    fetch(`${API_BASE}/api/seasons`)
+    fetch(`${API_BASE}/seasons`)
       .then((res) => res.json())
       .then((data) => {
         setSeasons(data.seasons);
@@ -27,7 +27,7 @@ function Championships() {
   // Load season data for categories
   useEffect(() => {
     if (selectedSeason) {
-      fetch(`${API_BASE}/api/seasons/${selectedSeason}`)
+      fetch(`${API_BASE}/seasons/${selectedSeason}`)
         .then((res) => res.json())
         .then((data) => {
           const categorySize = data.age_category_size || 5;
@@ -48,10 +48,10 @@ function Championships() {
     let endpoint;
     const params = new URLSearchParams();
     if (championshipType === 'team') {
-      endpoint = `${API_BASE}/api/seasons/${selectedSeason}/championship/team`;
+      endpoint = `${API_BASE}/seasons/${selectedSeason}/championship/team`;
       params.append('gender', selectedGender);
     } else {
-      endpoint = `${API_BASE}/api/seasons/${selectedSeason}/championship/individual`;
+      endpoint = `${API_BASE}/seasons/${selectedSeason}/championship/individual`;
       params.append('gender', selectedGender);
       if (selectedCategory) {
         params.append('category', selectedCategory);

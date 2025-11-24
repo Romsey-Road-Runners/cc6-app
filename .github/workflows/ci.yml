@@ -146,36 +146,3 @@ jobs:
           projectId: ${{ secrets.GCP_PROJECT_ID }}
           channelId: live
           target: cc6-frontend
-
-  create-pr:
-    name: Create PR to Main
-    runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-frontend]
-    if: github.ref == 'refs/heads/develop'
-    steps:
-      - name: Checkout branch ${{ github.ref_name }}
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 1
-
-      - name: Check if PR already exists
-        id: check
-        run: |
-          PR_URL=$(gh pr list --state "open" --base "main" --label "production" --json url | jq -r .[].url)
-          if [ -z "$PR_URL" ];
-          then
-            echo "raise=true" >> $GITHUB_OUTPUT
-          else
-            echo "PR is available [here]($PR_URL)" >> $GITHUB_STEP_SUMMARY;
-          fi
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-
-      - name: Raise PR 
-        if: ${{ steps.check.outputs.raise }}
-        run: |
-          gh pr create --base "main" --label "production" --title "Deploy to Production" --body "Sync changes from develop branch to main"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

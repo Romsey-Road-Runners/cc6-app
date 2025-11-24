@@ -15,7 +15,7 @@ function RaceResults() {
 
   // Load seasons on mount
   useEffect(() => {
-    fetch(`${API_BASE}/api/seasons`)
+    fetch(`${API_BASE}/seasons`)
       .then((res) => res.json())
       .then((data) => {
         setSeasons(data.seasons);
@@ -31,7 +31,7 @@ function RaceResults() {
   // Load races when season changes
   useEffect(() => {
     if (selectedSeason) {
-      fetch(`${API_BASE}/api/seasons/${selectedSeason}`)
+      fetch(`${API_BASE}/seasons/${selectedSeason}`)
         .then((res) => res.json())
         .then((data) => {
           setRaces(data.races || []);
@@ -55,7 +55,7 @@ function RaceResults() {
       if (selectedGender) params.append('gender', selectedGender);
       if (selectedCategory) params.append('category', selectedCategory);
 
-      const url = `${API_BASE}/api/seasons/${selectedSeason}/races/${selectedRace}${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `${API_BASE}/seasons/${selectedSeason}/races/${selectedRace}${params.toString() ? '?' + params.toString() : ''}`;
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(true);

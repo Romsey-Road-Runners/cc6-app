@@ -18,8 +18,8 @@ function Registration() {
 
   // Load clubs on mount
   useEffect(() => {
-    console.log('Fetching clubs from:', `${API_BASE}/api/clubs`);
-    fetch(`${API_BASE}/api/clubs`)
+    console.log('Fetching clubs from:', `${API_BASE}/clubs`);
+    fetch(`${API_BASE}/clubs`)
       .then((res) => {
         console.log('Clubs response status:', res.status);
         return res.json();
@@ -47,7 +47,7 @@ function Registration() {
     setMessage('');
 
     try {
-      const response = await fetch(`${API_BASE}/api/register`, {
+      const response = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
