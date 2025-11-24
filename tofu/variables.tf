@@ -36,3 +36,9 @@ variable "domain_frontend" {
   type        = string
 }
 
+variable "cors_origins" {
+  description = "Comma-separated list of CORS origins"
+  type        = string
+  default     = "http://localhost:*"
+}
+

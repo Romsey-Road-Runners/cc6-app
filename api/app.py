@@ -30,16 +30,8 @@ api = Api(
 )
 
 # Enable CORS
-CORS(
-    app,
-    origins=[
-        "https://*.cc6.co.uk",
-        "https://*.rr10.org.uk",
-        "https://*.running.cafe",
-        "http://localhost:*",
-        "https://localhost:*",
-    ],
-)
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:*").split(",")
+CORS(app, origins=[origin.strip() for origin in cors_origins])
 
 # Models
 club_model = api.model(

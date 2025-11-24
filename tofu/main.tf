@@ -389,6 +389,11 @@ resource "google_cloud_run_service" "api" {
           }
         }
 
+        env {
+          name  = "CORS_ORIGINS"
+          value = var.cors_origins
+        }
+
         resources {
           limits = {
             cpu    = "1000m"
