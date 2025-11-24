@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -295,9 +296,23 @@ function Championships() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         {championshipData.championship_type === 'individual' &&
-                        entry.club
-                          ? `${entry.name} (${entry.club})`
-                          : entry.name}
+                        entry.participant_id ? (
+                          <Link
+                            to={`/participant/${entry.participant_id}`}
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {entry.club
+                              ? `${entry.name} (${entry.club})`
+                              : entry.name}
+                          </Link>
+                        ) : (
+                          <span>
+                            {championshipData.championship_type ===
+                              'individual' && entry.club
+                              ? `${entry.name} (${entry.club})`
+                              : entry.name}
+                          </span>
+                        )}
                       </td>
                       {championshipData.championship_type === 'individual' && (
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

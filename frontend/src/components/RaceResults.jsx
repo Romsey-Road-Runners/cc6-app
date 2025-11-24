@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -173,8 +174,20 @@ function RaceResults() {
                       {index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {result.participant?.first_name}{' '}
-                      {result.participant?.last_name}
+                      {result.participant?.parkrun_barcode_id ? (
+                        <Link
+                          to={`/participant/${result.participant.parkrun_barcode_id}`}
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {result.participant?.first_name}{' '}
+                          {result.participant?.last_name}
+                        </Link>
+                      ) : (
+                        <span>
+                          {result.participant?.first_name}{' '}
+                          {result.participant?.last_name}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {result.participant?.gender}

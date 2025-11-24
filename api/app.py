@@ -344,7 +344,9 @@ class IndividualChampionship(Resource):
             api.abort(404, "No races found for season")
 
         season_data = database.get_season(season_name)
-        best_of = int(season_data.get("individual_results_best_of", 3)) if season_data else 3
+        best_of = (
+            int(season_data.get("individual_results_best_of", 3)) if season_data else 3
+        )
 
         # Individual championship calculation (simplified)
         all_participants = {}

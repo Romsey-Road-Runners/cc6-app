@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import RaceResults from './components/RaceResults';
 import Championships from './components/Championships';
 import Registration from './components/Registration';
+import ParticipantResults from './components/ParticipantResults';
 import './App.css';
 
 function App() {
@@ -78,6 +79,10 @@ function App() {
             <Route path="/" element={<RaceResults />} />
             <Route path="/championships" element={<Championships />} />
             <Route path="/register" element={<Registration />} />
+            <Route
+              path="/participant/:participantId"
+              element={<ParticipantResults />}
+            />
           </Routes>
         </main>
       </div>
