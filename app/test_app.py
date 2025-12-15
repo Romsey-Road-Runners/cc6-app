@@ -6,13 +6,7 @@ from unittest.mock import Mock, patch
 os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
 os.environ["FLASK_SECRET_KEY"] = "test-secret-key"
 
-import os
-import sys
-
 import app
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared_libs"))
-
 import database
 
 
@@ -340,7 +334,7 @@ class TestApp(unittest.TestCase):
             }
         ]
 
-        response = self.client.get("/api/seasons/season/races/race")
+        response = self.client.get("/api/races/season/race")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["name"], "race")
         self.assertIn("results", response.json)
@@ -391,12 +385,12 @@ class TestApp(unittest.TestCase):
         ]
 
         # Test gender filter
-        response = self.client.get("/api/seasons/season/races/race?gender=Male")
+        response = self.client.get("/api/races/season/race?gender=Male")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json["results"]), 1)
 
         # Test category filter
-        response = self.client.get("/api/seasons/season/races/race?category=Senior")
+        response = self.client.get("/api/races/season/race?category=Senior")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json["results"]), 1)
 
@@ -408,25 +402,18 @@ class TestApp(unittest.TestCase):
         ]
 
         # Without showMissingData
-        response = self.client.get("/api/seasons/season/races/race")
+        response = self.client.get("/api/races/season/race")
         self.assertEqual(len(response.json["results"]), 1)
 
         # With showMissingData
-        response = self.client.get(
-            "/api/seasons/season/races/race?showMissingData=true"
-        )
+        response = self.client.get("/api/races/season/race?showMissingData=true")
         self.assertEqual(len(response.json["results"]), 2)
-
-    def test_api_championship_missing_gender(self):
-        response = self.client.get("/api/seasons/season/championship/team")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Gender parameter is required", response.json["message"])
 
     @patch("database.get_races_by_season")
     def test_api_championship_no_races(self, mock_get_races):
         mock_get_races.return_value = []
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 404)
 
     @patch("database.get_races_by_season")
@@ -440,31 +427,22 @@ class TestApp(unittest.TestCase):
             {"participant": {"first_name": "Jane", "gender": "Male", "club": "Club B"}},
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["championship_type"], "team")
-
-    def test_api_individual_championship_missing_gender(self):
-        response = self.client.get("/api/seasons/season/championship/individual")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Gender parameter is required", response.json["message"])
 
     @patch("database.get_races_by_season")
     def test_api_individual_championship_no_races(self, mock_get_races):
         mock_get_races.return_value = []
 
-        response = self.client.get(
-            "/api/seasons/season/championship/individual?gender=Male"
-        )
+        response = self.client.get("/api/individual-championship/season/Male")
         self.assertEqual(response.status_code, 404)
 
     @patch("database.get_races_by_season")
     @patch("database.get_race_results")
-    @patch("database.get_season")
     def test_api_individual_championship_with_results(
-        self, mock_get_season, mock_get_results, mock_get_races
+        self, mock_get_results, mock_get_races
     ):
-        mock_get_season.return_value = {"individual_results_best_of": 3}
         mock_get_races.return_value = [
             {"name": "Race1"},
             {"name": "Race2"},
@@ -481,9 +459,7 @@ class TestApp(unittest.TestCase):
             }
         ]
 
-        response = self.client.get(
-            "/api/seasons/season/championship/individual?gender=Male"
-        )
+        response = self.client.get("/api/individual-championship/season/Male")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json["championship_type"], "individual")
 
@@ -1954,7 +1930,7 @@ class TestApp(unittest.TestCase):
             {"participant": {"first_name": "Jane", "gender": "Male", "club": "Club B"}},
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Verify organizing club gets "ORG" status
         standings = response.json["standings"]
@@ -1974,7 +1950,7 @@ class TestApp(unittest.TestCase):
             {"participant": {"first_name": "John", "gender": "Male", "club": "Club A"}}
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Club A won't appear (no activity), Club B will appear as organizer
         standings = response.json["standings"]
@@ -2021,7 +1997,7 @@ class TestApp(unittest.TestCase):
             },
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Verify club gets points (not DQ) with sufficient runners
         standings = response.json["standings"]
@@ -2094,7 +2070,7 @@ class TestApp(unittest.TestCase):
             },
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         standings = response.json["standings"]
         self.assertEqual(len(standings), 2)  # Both clubs should be in standings
@@ -2141,7 +2117,7 @@ class TestApp(unittest.TestCase):
             },
         ]
 
-        response = self.client.get("/api/seasons/season/championship/team?gender=Male")
+        response = self.client.get("/api/championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Verify club gets points and adjustment is applied (should be < raw total due to no organizing)
         standings = response.json["standings"]
@@ -2198,9 +2174,7 @@ class TestApp(unittest.TestCase):
             ],  # Valid name
         ]
 
-        response = self.client.get(
-            "/api/seasons/season/championship/individual?gender=Male"
-        )
+        response = self.client.get("/api/individual-championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Should only include valid names
         standings = response.json["standings"]
@@ -2253,9 +2227,7 @@ class TestApp(unittest.TestCase):
             ],
         ]
 
-        response = self.client.get(
-            "/api/seasons/season/championship/individual?gender=Male"
-        )
+        response = self.client.get("/api/individual-championship/season/Male")
         self.assertEqual(response.status_code, 200)
         # Should include participant with 3+ races
         standings = response.json["standings"]

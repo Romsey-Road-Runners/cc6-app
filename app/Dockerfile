@@ -1,22 +1,37 @@
-FROM python:3.14-slim
+# Build stage
+FROM python:3.13-alpine AS builder
 
-WORKDIR /workspace/app
+WORKDIR /app
 
-# Upgrade pip
-RUN pip install --upgrade pip
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev libffi-dev
 
 # Install pipenv
-RUN pip install pipenv
+RUN pip install --no-cache-dir pipenv
 
-# Install deps
-COPY app/Pipfile app/Pipfile.lock ./
-RUN pipenv install --system --deploy
+# Copy dependency files
+COPY Pipfile Pipfile.lock* ./
 
-# Copy shared libraries
-COPY shared_libs/ ../shared_libs/
+# Install only production dependencies
+RUN pipenv install --system --deploy --clear --ignore-pipfile
 
-# Copy application files
-COPY app/ .
+# Runtime stage
+FROM python:3.13-alpine AS runtime
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache libffi
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy application code
+COPY . .
+
+# Pre-compile Python files
+RUN python -m compileall .
 
 EXPOSE 8080
 

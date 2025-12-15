@@ -1,21 +1,10 @@
-FROM python:3.14-slim
+FROM python:3.13-slim
 
-WORKDIR /workspace/app
+WORKDIR /app
 
-# Upgrade pip
-RUN pip install --upgrade pip
+COPY Pipfile Pipfile.lock ./
+RUN pip install pipenv && pipenv install --dev --system
 
-# Install pipenv
-RUN pip install pipenv
+COPY . .
 
-# Install deps
-COPY app/Pipfile app/Pipfile.lock ./
-RUN pipenv install --dev --system
-
-# Copy shared libraries
-COPY shared_libs/ ../shared_libs/
-
-# Copy application files
-COPY app/ .
-
-CMD ["python", "-m", "pytest", "test_app.py", "../shared_libs/test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]
+CMD ["python", "-m", "pytest", "test_app.py", "test_database.py", "-v", "--cov=.", "--cov-report=term-missing"]
