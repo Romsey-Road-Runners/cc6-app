@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, admin]
+        app: [api, admin, app]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
